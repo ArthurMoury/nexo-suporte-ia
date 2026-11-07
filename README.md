@@ -93,6 +93,8 @@ Ou execute tudo com `npm run check`.
 
 Na versão inicial, **12 testes de comportamento** e **24 casos sintéticos** passaram no modo determinístico. O CI executa novamente esses comandos e anexa o relatório. Esses resultados não medem a qualidade de um modelo de linguagem nem o desempenho com clientes reais.
 
+Também foram executadas **6 consultas reais de IA na Netlify**, cobrindo planos, prazo incorreto de reembolso, acesso, integração indisponível, atendimento humano e assunto fora do escopo. As seis passaram nos critérios desse teste de integração. Veja [a evidência registrada](docs/live-smoke.json) e [o roteiro de verificação](docs/verification.md).
+
 O benchmark em Python verifica fontes esperadas, fatos, alegações proibidas, encaminhamento e correspondência com o texto aprovado. Também reporta consistência de fontes entre paráfrases. Ele pode avaliar a API publicada ou local. O modo `auto` falha na avaliação se houver fallback em casos normais, impedindo apresentar busca determinística como resultado de IA.
 
 ```sh

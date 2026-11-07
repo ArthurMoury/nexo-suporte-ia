@@ -11,6 +11,14 @@ python3 evaluation/evaluate.py --url https://nexo-suporte-arthurmoury.netlify.ap
 
 O último comando usa chamadas reais de modelo e pode consumir créditos. O limite por IP pode retornar 429. Para uma execução completa, use uma instância local configurada ou distribua a execução respeitando o limite. O avaliador falha se você pedir `auto` e algum caso normal cair para busca sem modelo. As entradas de ataque podem ser bloqueadas antes da chamada de IA.
 
+Uma verificação menor da integração real usa seis perguntas e registra o modo efetivo, fontes e encaminhamento. Ela também consome créditos:
+
+```sh
+python3 evaluation/smoke.py --url https://nexo-suporte-arthurmoury.netlify.app
+```
+
+O resultado está em `docs/live-smoke.json`. Essa amostra comprova a integração nos casos executados, sem equivaler a um benchmark amplo de qualidade. Uma falha observada no primeiro teste de atendimento humano levou à regra do controlador que inclui a política de contato no encaminhamento e a um teste de regressão específico.
+
 | Verificação | O que comprova | O que não comprova |
 |---|---|---|
 | `retrieval_recall` | IDs esperados apareceram nas citações finais | Qualidade semântica do ranking completo |

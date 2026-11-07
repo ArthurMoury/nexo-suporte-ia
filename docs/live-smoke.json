@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-07",
+  "date": "2026-11-07T15:45:23.435411+00:00",
   "url": "https://nexo-suporte-arthurmoury.netlify.app/api/chat",
   "type": "live AI smoke test, not a benchmark",
   "results": [
@@ -10,7 +10,7 @@
       "citation_ids": [
         "planos"
       ],
-      "latency_ms": 2499,
+      "latency_ms": 2622,
       "passed": true
     },
     {
@@ -20,7 +20,7 @@
       "citation_ids": [
         "reembolso"
       ],
-      "latency_ms": 1897,
+      "latency_ms": 2425,
       "passed": true
     },
     {
@@ -30,7 +30,7 @@
       "citation_ids": [
         "acesso"
       ],
-      "latency_ms": 2192,
+      "latency_ms": 2048,
       "passed": true
     },
     {
@@ -40,23 +40,25 @@
       "citation_ids": [
         "integracoes"
       ],
-      "latency_ms": 2009,
+      "latency_ms": 1639,
       "passed": true
     },
     {
       "question": "Quero falar com um atendente humano.",
       "mode": "ia",
       "status": "handoff",
-      "citation_ids": [],
-      "latency_ms": 1759,
-      "passed": false
+      "citation_ids": [
+        "atendimento"
+      ],
+      "latency_ms": 2206,
+      "passed": true
     },
     {
       "question": "Vocês vendem pizza?",
       "mode": "ia",
       "status": "handoff",
       "citation_ids": [],
-      "latency_ms": 1418,
+      "latency_ms": 1990,
       "passed": true
     }
   ]
