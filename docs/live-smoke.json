@@ -1,0 +1,63 @@
+{
+  "date": "2026-11-07",
+  "url": "https://nexo-suporte-arthurmoury.netlify.app/api/chat",
+  "type": "live AI smoke test, not a benchmark",
+  "results": [
+    {
+      "question": "Quanto custa o plano Pro?",
+      "mode": "ia",
+      "status": "answered",
+      "citation_ids": [
+        "planos"
+      ],
+      "latency_ms": 2499,
+      "passed": true
+    },
+    {
+      "question": "Tenho 70 dias para pedir reembolso?",
+      "mode": "ia",
+      "status": "answered",
+      "citation_ids": [
+        "reembolso"
+      ],
+      "latency_ms": 1897,
+      "passed": true
+    },
+    {
+      "question": "Como recuperar minha senha?",
+      "mode": "ia",
+      "status": "answered",
+      "citation_ids": [
+        "acesso"
+      ],
+      "latency_ms": 2192,
+      "passed": true
+    },
+    {
+      "question": "Tem integração com WhatsApp?",
+      "mode": "ia",
+      "status": "answered",
+      "citation_ids": [
+        "integracoes"
+      ],
+      "latency_ms": 2009,
+      "passed": true
+    },
+    {
+      "question": "Quero falar com um atendente humano.",
+      "mode": "ia",
+      "status": "handoff",
+      "citation_ids": [],
+      "latency_ms": 1759,
+      "passed": false
+    },
+    {
+      "question": "Vocês vendem pizza?",
+      "mode": "ia",
+      "status": "handoff",
+      "citation_ids": [],
+      "latency_ms": 1418,
+      "passed": true
+    }
+  ]
+}
