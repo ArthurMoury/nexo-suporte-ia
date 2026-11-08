@@ -33,6 +33,8 @@ def main():
     parser.add_argument('--split', choices=['all', 'dev', 'test'], default='all')
     parser.add_argument('--output', default='evaluation/results.local.json')
     args = parser.parse_args()
+    if args.url or args.mode != 'base':
+        parser.error('Este benchmark é a referência histórica local. Para a API atual, use evaluation/smoke.py.')
     corpus = json.loads((ROOT / 'data/knowledge.json').read_text())
     cases = [json.loads(line) for line in (ROOT / 'evaluation/benchmark.jsonl').read_text().splitlines() if line]
     cases = [c for c in cases if args.split == 'all' or c['split'] == args.split]

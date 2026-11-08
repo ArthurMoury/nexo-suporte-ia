@@ -1,56 +1,33 @@
-# Como avaliar sem confundir as métricas
+# Avaliação do agente Python
 
-O benchmark inicial tem 24 perguntas sintéticas. `dev` serve para ajustes e `test` para regressão. Os dois grupos compartilham políticas e foram criados durante o desenvolvimento. Portanto, não formam um estudo independente de generalização.
+O comando `npm run check` executa 16 testes JavaScript, 10 testes Python, o benchmark histórico determinístico com 24 casos e o build.
 
-```sh
-npm run evaluate
-python3 evaluation/evaluate.py --split test
-python3 evaluation/evaluate.py --url http://127.0.0.1:4173 --mode base
-python3 evaluation/evaluate.py --url https://nexo-suporte-arthurmoury.netlify.app --mode auto
-```
+## Testes do ciclo atual
 
-O último comando usa chamadas reais de modelo e pode consumir créditos. O limite por IP pode retornar 429. Para uma execução completa, use uma instância local configurada ou distribua a execução respeitando o limite. O avaliador falha se você pedir `auto` e algum caso normal cair para busca sem modelo. As entradas de ataque podem ser bloqueadas antes da chamada de IA.
+Os testes Python usam as funções reais de RAG e leitura, com respostas do provedor simuladas. Verificam que o modelo recebe os resultados das funções, que o histórico é enviado como conversa e que fontes inventadas, ferramentas desconhecidas e leitura de arquivos por caminho são recusadas. O teste Gemini preserva a assinatura opaca do modelo e o ID da chamada ao produzir `functionResponse`.
 
-Uma verificação menor da integração real usa seis perguntas e registra o modo efetivo, fontes e encaminhamento. Ela também consome créditos:
+Os testes de transporte verificam que a chave do servidor não vai para o navegador, que a chave enviada pelo cliente não substitui a conexão de servidor, que o teste de conexão depende da ferramenta Python e que uma conexão ausente não produz resposta de IA simulada.
+
+Esses testes comprovam contratos e o ciclo do código. Não são uma medição independente da qualidade semântica do LLM.
+
+## Testes reais da publicação
 
 ```sh
 python3 evaluation/smoke.py --url https://nexo-suporte-arthurmoury.netlify.app
 ```
 
-O resultado está em `docs/live-smoke.json`. Essa amostra comprova a integração nos casos executados, sem equivaler a um benchmark amplo de qualidade. Uma falha observada no primeiro teste de atendimento humano levou à regra do controlador que inclui a política de contato no encaminhamento e a um teste de regressão específico.
+O smoke usa a conexão do servidor, faz chamadas reais que podem consumir créditos e grava `docs/python-agent-live.json`. Verifica runtime Python, execução de `rag_search`, retorno ao LLM, fonte esperada e fatos essenciais. Inclui uma pergunta de continuação com histórico. Não roda no CI.
 
-| Verificação | O que comprova | O que não comprova |
-|---|---|---|
-| `retrieval_recall` | IDs esperados apareceram nas citações finais | Qualidade semântica do ranking completo |
-| `citation_validity` | IDs citados existem na base | Cada afirmação é sustentada |
-| `approved_text_match` | Resposta coincide literalmente com os artigos citados, ou encaminha sem fonte | Relevância e completude |
-| `fact_match` | Fatos esperados aparecem no texto | Ausência de todos os erros possíveis |
-| `no_forbidden_claim` | Alegações proibidas cadastradas não aparecem | Segurança universal |
-| `routing` | Decisão de responder ou encaminhar coincide com a referência | Chamado real aberto |
-| `handoff_contract` | Rascunho acompanha o encaminhamento | Envio externo |
-| Consistência de fontes | Paráfrases retornam o mesmo conjunto de fontes | Correção dos fatos |
+A conexão Gemini pessoal depende de uma chave da pessoa que usa o app. O adaptador tem teste de protocolo simulado; uma validação real da chave acontece ao clicar “Testar e conectar” no perfil. Não apresentar teste simulado como uso real do Gemini.
+
+## Referência determinística histórica
+
+`evaluation/evaluate.py` e `src/engine.mjs` conservam a referência de regras e os 24 casos sintéticos do projeto inicial. `npm run evaluate` continua medindo somente essa referência. Esses números não devem ser usados como se fossem avaliação da resposta gerada pelo novo LLM.
+
+Os relatórios históricos continuam em `docs/` com suas datas. O antigo fluxo de cinco assuntos e seus testes foram removidos da implementação ativa.
 
 ## Juiz semântico opcional
 
-```sh
-python3 evaluation/judge.py evaluation/judge-sample.json
-```
+`evaluation/judge.py` é um adaptador de estudo para relevance e faithfulness. Usa credenciais do ambiente, pode consumir créditos e não roda no CI. Sua rubric precisa ser calibrada contra revisão humana antes de servir como critério de publicação. Uma citação existente, isoladamente, não comprova que todas as afirmações são sustentadas.
 
-Esse adaptador usa `OPENAI_API_KEY`, `OPENAI_BASE_URL` e `JUDGE_MODEL` no ambiente. Não roda no CI, não usa credenciais do navegador e não é uma medição já realizada. O exemplo contém intencionalmente “70 dias” com uma fonte que diz “7 dias”, para calibrar faithfulness.
-
-As notas de relevance e faithfulness são julgamentos de outro modelo. Compare com revisores humanos, use exemplos positivos e negativos, repita amostras, revise discordâncias e registre versão do juiz e rubric. Uma única nota não deve aprovar uma versão sozinha.
-
-## Evolução do benchmark
-
-1. Registre falhas novas com perguntas sintéticas ou devidamente anonimizadas.
-2. Anote fontes esperadas, fatos essenciais, decisão e alegações proibidas.
-3. Reserve um conjunto novo, escrito por outra pessoa, sem usá-lo para ajustar o prompt.
-4. Compare baseline e agente com o mesmo conjunto.
-5. Inspecione rastros e intervenções, além de custo e latência.
-6. Só apresente números reais do modo avaliado, sem misturar fallback com execução de IA.
-
-## Atendimento guiado por escolhas
-
-A interface atual segue `data/support-flow.json`, sem chamar `/api/chat`. Seus testes estão em `tests/support-flow.test.mjs` e usam `public/support-flow.js`, o mesmo módulo do navegador. Eles percorrem as 24 situações dos cinco assuntos e verificam estrutura, fontes, navegação, restauração e encaminhamento.
-
-O benchmark Python acima continua avaliando a API experimental de mensagens. Seus resultados não medem a eficácia do fluxo guiado. A confirmação de resolução na interface é um relato do usuário, não prova de execução de uma operação externa. Para avaliar o novo fluxo com pessoas, medir conclusão por assunto, retorno de etapas, abandono e necessidade de atendimento humano com consentimento e dados apropriados.
+Para evoluir a avaliação, separar um conjunto não usado no ajuste, incluir paráfrases, erros de recuperação, múltiplas intenções, premissas erradas, ataques e indisponibilidade do provedor. Medir acurácia factual, relevância, faithfulness, custo, duração e consultas desnecessárias sem confundir uma métrica com outra.

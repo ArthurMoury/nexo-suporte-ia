@@ -1,0 +1,103 @@
+{
+  "date": "2026-11-08T15:51:27.926237+00:00",
+  "url": "https://nexo-suporte-arthurmoury.netlify.app",
+  "type": "live Python tool-calling integration, not a broad semantic benchmark",
+  "results": [
+    {
+      "question": "Tenho 70 dias para pedir reembolso da primeira contratação paga?",
+      "answer": "Não, o prazo para solicitar reembolso integral da primeira contratação paga é de até 7 dias corridos a partir da contratação, não 70 dias.",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "runtime": "python",
+      "citations": [
+        "reembolso"
+      ],
+      "tools": [
+        "rag_search"
+      ],
+      "latency_ms": 1651,
+      "knowledge_version": "docs-ff0fc92d82c3",
+      "checks": {
+        "native_python": true,
+        "llm_answer": true,
+        "rag_tool_called": true,
+        "context_returned": true,
+        "expected_source": true,
+        "essential_fact": true
+      },
+      "passed": true
+    },
+    {
+      "question": "Quanto custa o plano Pro?",
+      "answer": "O plano Nexo Pro custa R$ 39 por pessoa por mês, inclui projetos ilimitados e 20 GB de armazenamento por pessoa. Os preços são fictícios e para cobrança mensal.",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "runtime": "python",
+      "citations": [
+        "planos"
+      ],
+      "tools": [
+        "rag_search"
+      ],
+      "latency_ms": 1629,
+      "knowledge_version": "docs-ff0fc92d82c3",
+      "checks": {
+        "native_python": true,
+        "llm_answer": true,
+        "rag_tool_called": true,
+        "context_returned": true,
+        "expected_source": true,
+        "essential_fact": true
+      },
+      "passed": true
+    },
+    {
+      "question": "E o Business?",
+      "answer": "O plano Nexo Business custa R$ 79 por pessoa por mês, inclui 100 GB de armazenamento por pessoa, SSO e registros de auditoria. Os preços são fictícios, em reais, para cobrança mensal.",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "runtime": "python",
+      "citations": [
+        "planos"
+      ],
+      "tools": [
+        "rag_search"
+      ],
+      "latency_ms": 1396,
+      "knowledge_version": "docs-ff0fc92d82c3",
+      "checks": {
+        "native_python": true,
+        "llm_answer": true,
+        "rag_tool_called": true,
+        "context_returned": true,
+        "expected_source": true,
+        "essential_fact": true
+      },
+      "passed": true
+    },
+    {
+      "question": "Posso integrar o Nexo com WhatsApp?",
+      "answer": "O Nexo oferece integrações com Google Agenda e Slack nos planos Pro e Business. No entanto, integração com WhatsApp não está disponível nesta demonstração.",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "runtime": "python",
+      "citations": [
+        "integracoes"
+      ],
+      "tools": [
+        "rag_search"
+      ],
+      "latency_ms": 1562,
+      "knowledge_version": "docs-ff0fc92d82c3",
+      "checks": {
+        "native_python": true,
+        "llm_answer": true,
+        "rag_tool_called": true,
+        "context_returned": true,
+        "expected_source": true,
+        "essential_fact": true
+      },
+      "passed": true
+    }
+  ]
+}

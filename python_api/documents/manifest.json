@@ -1,0 +1,197 @@
+{
+  "planos": {
+    "category": "Assinatura",
+    "keywords": [
+      "plano",
+      "planos",
+      "preço",
+      "preços",
+      "valor",
+      "custa",
+      "custo",
+      "gratuito",
+      "gratis",
+      "free",
+      "starter",
+      "pro",
+      "business",
+      "assinatura"
+    ]
+  },
+  "teste": {
+    "category": "Assinatura",
+    "keywords": [
+      "teste",
+      "trial",
+      "experimentar",
+      "experimente",
+      "avaliar",
+      "14 dias",
+      "cartao para testar"
+    ]
+  },
+  "pagamento": {
+    "category": "Cobrança",
+    "keywords": [
+      "pagar",
+      "pagamento",
+      "pagamentos",
+      "pix",
+      "boleto",
+      "cartao",
+      "cobrança",
+      "cobrado",
+      "duplicada",
+      "duplicado",
+      "debito"
+    ]
+  },
+  "cancelamento": {
+    "category": "Assinatura",
+    "keywords": [
+      "cancelar",
+      "cancele",
+      "cancelo",
+      "cancelamento",
+      "encerrar",
+      "desistir",
+      "parar de pagar"
+    ]
+  },
+  "reembolso": {
+    "category": "Cobrança",
+    "keywords": [
+      "reembolso",
+      "reembolsar",
+      "devolver",
+      "devolução",
+      "estorno",
+      "dinheiro de volta",
+      "arrependi",
+      "arrependimento"
+    ]
+  },
+  "acesso": {
+    "category": "Conta",
+    "keywords": [
+      "senha",
+      "acesso",
+      "entrar",
+      "login",
+      "logar",
+      "esqueci",
+      "recuperar",
+      "redefinir",
+      "link",
+      "email nao chega",
+      "e-mail nao chega"
+    ]
+  },
+  "fatura": {
+    "category": "Cobrança",
+    "keywords": [
+      "fatura",
+      "faturas",
+      "nota fiscal",
+      "notas fiscais",
+      "recibo",
+      "comprovante",
+      "segunda via"
+    ]
+  },
+  "convites": {
+    "category": "Equipe",
+    "keywords": [
+      "convidar",
+      "convite",
+      "membro",
+      "membros",
+      "equipe",
+      "pessoa",
+      "pessoas",
+      "permissao",
+      "permissões",
+      "administrador"
+    ]
+  },
+  "integracoes": {
+    "category": "Produto",
+    "keywords": [
+      "integração",
+      "integrações",
+      "integrar",
+      "google",
+      "agenda",
+      "calendar",
+      "slack",
+      "trello",
+      "whatsapp",
+      "api",
+      "webhook"
+    ]
+  },
+  "arquivos": {
+    "category": "Produto",
+    "keywords": [
+      "arquivo",
+      "arquivos",
+      "armazenamento",
+      "upload",
+      "limite",
+      "exportar",
+      "exportação",
+      "download",
+      "backup",
+      "csv",
+      "mb",
+      "gb"
+    ]
+  },
+  "atendimento": {
+    "category": "Suporte",
+    "keywords": [
+      "humano",
+      "atendente",
+      "atendimento",
+      "suporte",
+      "horario",
+      "horários",
+      "telefone",
+      "contato",
+      "falar com",
+      "pessoa real",
+      "reclamar"
+    ]
+  },
+  "privacidade": {
+    "category": "Conta",
+    "keywords": [
+      "privacidade",
+      "dados",
+      "lgpd",
+      "excluir",
+      "exclusão",
+      "apagar",
+      "segurança",
+      "criptografia",
+      "retencao",
+      "reter"
+    ]
+  },
+  "incidentes": {
+    "category": "Suporte",
+    "keywords": [
+      "erro",
+      "falha",
+      "fora do ar",
+      "indisponível",
+      "indisponibilidade",
+      "lento",
+      "lentidão",
+      "travou",
+      "bug",
+      "funciona",
+      "500"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+{"version":2,"functions":{"api/agent.py":{"includeFiles":"{nexo_agent/**,documents/**}","maxDuration":60}}}

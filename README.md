@@ -1,138 +1,154 @@
 <p align="center"><img src="public/logo.svg" alt="Nexo IA" width="62"></p>
 <h1 align="center">Nexo IA</h1>
-<p align="center">Atendimento guiado por opções, do assunto inicial à solução do problema.</p>
-<p align="center"><a href="https://nexo-suporte-arthurmoury.netlify.app">Experimentar o atendimento</a> · <a href="docs/architecture.md">Arquitetura</a> · <a href="docs/evaluation.md">Avaliação</a></p>
-<p align="center"><img alt="Quality" src="https://github.com/ArthurMoury/nexo-suporte-ia/actions/workflows/quality.yml/badge.svg"> <img alt="Node 22 ou superior" src="https://img.shields.io/badge/Node-22%2B-36664a"> <img alt="Python 3.10 ou superior" src="https://img.shields.io/badge/Python-3.10%2B-426b8a"></p>
+<p align="center">Chat com LLM via API, tool calling em Python e RAG sobre documentos de suporte.</p>
+<p align="center"><a href="https://nexo-suporte-arthurmoury.netlify.app">Conversar com o agente</a> · <a href="docs/architecture.md">Arquitetura</a> · <a href="docs/evaluation.md">Avaliação</a></p>
+<p align="center"><img alt="Quality" src="https://github.com/ArthurMoury/nexo-suporte-ia/actions/workflows/quality.yml/badge.svg"> <img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-426b8a"> <img alt="Node 22 ou superior" src="https://img.shields.io/badge/Node-22%2B-36664a"></p>
 
-![Atendimento guiado do Nexo IA](docs/guided-support.png)
+![Chat com LLM e ferramentas Python](docs/llm-agent.png)
 
-## O atendimento começa com uma escolha
+## Um agente que consulta antes de responder
 
-Você não precisa escrever uma mensagem nem saber como explicar seu problema. O assistente oferece cinco assuntos. Cada um abre categorias, que levam a situações específicas e a uma orientação com passos claros.
+A pessoa escreve no chat. O orquestrador Python envia a mensagem e o contexto recente ao modelo, que solicita uma ferramenta com argumentos estruturados. O código executa a busca nos documentos, devolve os trechos ao LLM e recebe uma resposta redigida pelo próprio modelo.
 
-O cenário é a **Nexo**, uma loja fictícia de assinaturas do Nexo Workspace, software para pequenas equipes. Preços, políticas, organizações e chamados foram criados para o projeto.
+Não há árvore de cinco assuntos, perguntas fixas ou respostas de menu. Se a API falhar, a interface informa o erro. Uma resposta estática não é apresentada como saída de IA.
 
-| Assunto | Categorias | Exemplos de problemas |
-|---|---|---|
-| Conta e acesso | Recuperação, privacidade e dados | Senha esquecida, link expirado, exclusão de dados |
-| Planos e assinatura | Escolha e gestão do plano | Comparar recursos, testar o Pro, cancelar |
-| Pagamentos e reembolsos | Cobranças, documentos e devoluções | Cobrança duplicada, nota fiscal, prazo de reembolso |
-| Equipe e arquivos | Pessoas, permissões e conteúdo | Convite expirado, upload, exportação CSV |
-| Integrações e falhas | Conexões e problemas técnicos | Google Agenda, aplicativos não disponíveis, erro e lentidão |
+O cenário é a **Nexo**, uma loja fictícia de assinaturas do Nexo Workspace. As políticas, preços, organizações e chamados foram criados para o projeto.
 
-O fluxo contém **24 situações com soluções cadastradas**, vinculadas a **13 artigos de suporte**.
-
-## Uma conversa conduzida por botões
+## O ciclo completo
 
 ```mermaid
-flowchart LR
-    A[Cinco assuntos] --> B[Categoria]
-    B --> C[Problema específico]
-    C --> D[Orientação e passos]
-    D --> E{Resolveu?}
-    E -->|Sim| F[Atendimento resolvido]
-    E -->|Ainda preciso de ajuda| G[Resumo para atendimento humano]
+sequenceDiagram
+    participant U as Chat
+    participant N as Transporte Netlify
+    participant P as Orquestrador Python
+    participant L as LLM via API
+    participant R as Ferramentas Python
+    participant D as Documentos Markdown
+    U->>N: Mensagem e contexto recente
+    N->>P: Solicitação e conexão do provedor
+    P->>L: Instruções, conversa e ferramentas
+    L-->>P: Function call com argumentos
+    P->>R: rag_search ou read_document
+    R->>D: Busca e leitura dos documentos
+    D-->>R: Trechos e metadados
+    R-->>P: Resultado da função
+    P->>L: Resultado da ferramenta como contexto
+    L-->>P: Resposta final e IDs das fontes
+    P-->>N: Texto, citações e rastro
+    N-->>U: Resposta do modelo e fontes
 ```
 
-Exemplo: **Conta e acesso → Recuperar meu acesso → Esqueci minha senha**.
+O backend Python roda nativamente na Vercel. A interface e a camada de transporte rodam na Netlify. O transporte não gera respostas nem executa uma imitação das funções Python.
 
-O assistente mostra a orientação correspondente e a política usada. Você confirma a resolução ou prepara um resumo para continuar com uma pessoa. Também pode voltar uma etapa, retornar ao menu inicial ou pedir atendimento humano a qualquer momento.
+## Conectar uma API no perfil
 
-- Somente as opções da etapa atual ficam disponíveis.
-- O histórico permite reabrir o caminho e continuar após atualizar a aba.
-- As conversas de exemplo estão identificadas e podem ser exploradas.
-- A barra lateral abre e fecha com animação e funciona como menu deslizante no celular.
-- O painel “Por trás da resposta” começa recolhido e mostra as escolhas e fontes consultadas.
-- O resumo humano inclui o caminho completo, sem exigir dados pessoais.
+1. Clique em **Arthur Moury**, no rodapé da barra lateral.
+2. Escolha **Conectar API**.
+3. Selecione **Google Gemini**, informe o modelo e cole sua chave.
+4. Clique em **Testar e conectar**. O teste faz uma consulta real ao modelo e verifica a ferramenta Python.
 
-O resumo é um rascunho para copiar. Não há envio de mensagem, abertura real de chamado, cancelamento de plano ou execução de reembolso. O contato `suporte@nexo.example` é demonstrativo.
+Também há opção para uma chave própria da OpenAI e para a conexão configurada no servidor. A conexão do servidor usa o provedor e modelo informados em `/api/config`, sem expor sua chave ao navegador.
 
-## Fluxo controlado e API experimental de IA
+[Ver a tela de conexão](docs/api-connection.png).
 
-**O atendimento publicado usa uma árvore de decisões e soluções cadastradas. Ele não faz chamadas ao modelo de IA.** As escolhas e políticas são processadas no navegador. Esta arquitetura corresponde a um chatbot de atendimento guiado, sem autonomia de um LLM.
+Chaves pessoais ficam somente na memória da página. Não são gravadas no histórico, no armazenamento da sessão, nos arquivos do projeto ou nos logs próprios da aplicação. Ao recarregar, é preciso reconectar a chave pessoal. Na produção, a chave atravessa o transporte Netlify e o backend Python por HTTPS para chamar o provedor. A conexão do servidor mantém sua chave fora do navegador.
 
-O repositório também conserva uma **API experimental separada**, em JavaScript e Netlify Functions. Em `/api/chat`, um modelo pode escolher ferramentas e selecionar fontes, ou usar uma referência determinística sem modelo. Essa API continua disponível para estudo, com benchmark em Python e juiz semântico opcional, mas não é chamada pelos botões do atendimento.
+O uso dos modelos, inclusive o teste de conexão, pode consumir créditos do provedor ou da hospedagem.
 
-Essa separação permite estudar tanto o comportamento previsível de um fluxo quanto a avaliação de uma integração com modelo. Veja [Arquitetura](docs/architecture.md).
+## Ferramentas e documentos
+
+| Componente | Implementação |
+|---|---|
+| `rag_search(query, top_k)` | Python: recupera trechos com BM25 e reforço de termos |
+| `read_document(document_id)` | Python: lê uma política conhecida pelo ID |
+| Documentos | 13 arquivos Markdown em `python_api/documents/` |
+| Orquestração | Até 4 rodadas de modelo e 6 chamadas de ferramenta |
+| Resposta | Texto gerado pelo LLM, com fontes validadas contra a execução |
+| Contexto | Até 4 pares recentes de mensagens |
+
+A recuperação é **lexical**, sem embeddings ou banco vetorial. A geração apoiada nos trechos recuperados forma o RAG. IDs citados precisam ter aparecido nos resultados das ferramentas. Isso comprova a origem da referência, mas não garante por si só que toda afirmação do modelo esteja correta. Preços, prazos e condições precisam ser avaliados.
+
+O painel **Por trás da resposta** começa fechado e mostra as chamadas efetivas, os argumentos, a execução em Python e os documentos recuperados. A página **Base de conhecimento** explica o mesmo fluxo, incluindo o retorno do resultado ao LLM.
 
 ## Executar localmente
 
-Requisitos: Node.js 22 ou superior e Python 3.10 ou superior para o benchmark. Não há dependências de runtime de terceiros.
+Requisitos: Node.js 22 ou superior e Python 3.12. Não há dependências de runtime de terceiros.
 
 ```sh
 git clone https://github.com/ArthurMoury/nexo-suporte-ia.git
 cd nexo-suporte-ia
 npm ci
-npm run dev
+python3 python_api/run_local.py
 ```
 
-Abra [localhost:4173](http://127.0.0.1:4173). O atendimento guiado funciona sem credenciais de IA.
+Em outro terminal, na raiz:
 
-## Editar os assuntos e as soluções
-
-[data/support-flow.json](data/support-flow.json) define os assuntos, categorias e problemas. Cada problema informa `articleId`, uma introdução, os passos da solução e se precisa de análise humana. [data/knowledge.json](data/knowledge.json) reúne as políticas e os registros fictícios.
-
-```json
-{
-  "id": "meu-problema",
-  "label": "Descrição que a pessoa reconhece",
-  "articleId": "acesso",
-  "solution": {
-    "intro": "Orientação aprovada para esse caso.",
-    "steps": ["Primeiro passo.", "Segundo passo."]
-  },
-  "needsHuman": false
-}
+```sh
+NEXO_PYTHON_URL=http://127.0.0.1:4180/api/agent npm run dev
 ```
 
-Mantenha as orientações coerentes com as políticas. Cada ID precisa ser único, cada menu precisa de opções e cada problema precisa de uma solução com fonte válida. Os testes percorrem todas as 24 situações e verificam esses contratos.
+Abra [localhost:4173](http://127.0.0.1:4173) e conecte uma API pelo perfil. O backend local atende em `127.0.0.1:4180`. Se você não definir `NEXO_PYTHON_URL`, o transporte usa o backend publicado de `python-deployment.json`.
 
-## Qualidade e regressão
+Para a conexão de servidor, configure `OPENAI_API_KEY`, `OPENAI_BASE_URL` e `OPENAI_MODEL` no ambiente do processo Node. `DISABLE_AI=true` desativa essa conexão. Chaves pessoais continuam sendo configuradas no perfil. Veja [.env.example](.env.example).
+
+## Modelos e adaptadores
+
+- **Gemini:** usa a API REST `generateContent`, com chamadas de função e retorno de `functionResponse`. As partes originais do modelo, incluindo assinaturas de pensamento, são preservadas no ciclo.
+- **OpenAI:** usa Chat Completions com `tool_calls` e respostas `tool` associadas por `tool_call_id`.
+
+Os nomes de modelo são configuráveis. A disponibilidade depende da chave e da conta. O adaptador Gemini tem teste automatizado do protocolo com respostas simuladas. A validação real de uma chave Gemini é feita ao conectar no perfil. Não há uma chave pessoal Gemini versionada neste projeto.
+
+## Verificação
 
 ```sh
 npm run check
 ```
 
-A verificação atual executa **18 testes em JavaScript**, **24 casos do benchmark determinístico em Python** e o build. Os testes novos cobrem todos os caminhos do fluxo, restauração e retorno de etapas, referências inválidas, IDs duplicados, prazo de reembolso e rascunho humano.
+A verificação executa **16 testes JavaScript**, **10 testes Python**, o **benchmark determinístico de referência com 24 casos** e o build. Os testes do backend verificam execução real das funções Python com o transporte LLM simulado, retorno do contexto ao modelo, histórico, validação de fontes, ferramentas não permitidas, limites e o protocolo Gemini.
 
-O benchmark Python de perguntas e respostas avalia a API experimental. Ele não deve ser apresentado como uma avaliação semântica da nova árvore de atendimento. Os testes de caminhos verificam a estrutura e os contratos do fluxo, não a eficácia com clientes reais.
+Para testar a integração publicada com chamadas reais:
 
-O GitHub Actions executa as verificações a cada push. O juiz semântico em Python é opcional, usa chamadas de API que podem consumir créditos e exige calibração humana. Veja [o guia de avaliação](docs/evaluation.md) e [o registro de verificação](docs/verification.md).
+```sh
+python3 evaluation/smoke.py --url https://nexo-suporte-arthurmoury.netlify.app
+```
 
-## Histórico e dados
+Esse comando usa a conexão do servidor, consome créditos e não roda no CI. Resultados ficam em `docs/python-agent-live.json`. O benchmark determinístico antigo avalia a referência de regras; seus resultados não são notas de qualidade do novo LLM. Veja [Avaliação](docs/evaluation.md) e [Verificação](docs/verification.md).
 
-O histórico guiado guarda até 12 atendimentos no `sessionStorage` da aba: caminho escolhido e situação de cada atendimento. Ele pode ser reaberto após recarregar e não é sincronizado com uma conta. Sem armazenamento disponível, a interface mantém o histórico em memória. Os dados de sessão da interface anterior não são sobrescritos pelo novo fluxo.
+## Dados, histórico e limites
 
-O atendimento não solicita texto livre, senhas, cartão ou dados pessoais. Os artigos, três organizações e três chamados de exemplo são públicos e inteiramente fictícios.
+As mensagens e respostas ficam no `sessionStorage` da aba, com até 12 conversas e 20 pares por conversa. Chaves não entram nesses registros. O histórico de versões anteriores não é sobrescrito. Até quatro pares recentes são reenviados ao modelo como contexto.
+
+O modelo e os provedores de hospedagem processam os dados enviados. Não envie informações pessoais ou credenciais no chat. A aplicação não oferece retenção zero de toda a infraestrutura.
+
+As ferramentas são de consulta. O agente não cancela planos, aprova reembolsos, envia e-mails ou abre chamados. As funções são selecionadas por uma lista permitida. O código não executa Python arbitrário gerado pelo modelo.
+
+Há limite de 12 requisições por IP por minuto na Netlify, limite de passos e timeout. Isso não é um teto global de gasto. Antes de atender clientes reais, revisar políticas, adicionar autenticação, autorização, cotas globais e avaliação independente.
 
 ## Publicação
 
-A demonstração está na [Netlify](https://nexo-suporte-arthurmoury.netlify.app). O arquivo `netlify.toml` configura o build, `dist/` e as funções. O deploy atual é manual, enquanto o CI verifica a qualidade do código.
+O frontend é publicado pela CLI Netlify. O backend Python tem publicação separada:
 
 ```sh
+npx vercel --cwd python_api --prod
 npx netlify-cli deploy --prod --build
 ```
 
-Para publicar sua cópia, vincule a CLI ao seu próprio projeto Netlify ou importe o repositório na plataforma.
-
-Apenas o uso da API experimental de IA pode consumir créditos de modelo. Ela aceita `OPENAI_API_KEY`, `OPENAI_BASE_URL` e `OPENAI_MODEL`, somente no servidor. Sem credenciais, retorna a referência determinística. `DISABLE_AI=true` desliga o modelo. O atendimento por opções não depende dessas variáveis. Consulte [.env.example](.env.example).
+`python-deployment.json` aponta para a URL pública do backend. O CI valida o código, sem fazer deploy. Para sua própria cópia, use projetos e contas de hospedagem seus e atualize essa URL.
 
 ## Estrutura
 
 ```text
- data/support-flow.json      Árvore de assuntos, problemas e soluções
- data/knowledge.json         Políticas e registros fictícios
- public/app.js               Conversa guiada, histórico e navegação
- public/support-flow.js      Validação de caminhos e geração de resumos
- src/engine.mjs              Controlador da API experimental de IA
- netlify/functions/chat.mjs  API de mensagens separada da interface
- evaluation/                 Benchmark e juiz semântico em Python
- tests/                      Contratos do fluxo e da API
- docs/                       Arquitetura, avaliação e capturas
+python_api/nexo_agent/       Orquestração, provedores e RAG em Python
+python_api/documents/        Documentos Markdown e termos de busca
+python_api/api/agent.py      Handler HTTP do backend Python
+python_api/tests/            Testes do ciclo e das ferramentas
+src/python-proxy.mjs        Transporte e configuração do provedor
+netlify/functions/chat.mjs  Rotas /api/chat, /api/config e /api/connection
+public/                     Chat, perfil, histórico e base de conhecimento
+src/engine.mjs              Referência histórica de regras para avaliação
+evaluation/                 Benchmark de referência, smoke e juiz opcional
 ```
 
-## Limites
+Referências: [Function calling do Gemini](https://ai.google.dev/gemini-api/docs/function-calling), [Function calling da OpenAI](https://developers.openai.com/api/docs/guides/function-calling), [Python na Vercel](https://vercel.com/docs/functions/runtimes/python/api-directory) e [Netlify Functions](https://docs.netlify.com/build/functions/overview/).
 
-Um problema fora das opções precisa de atendimento humano ou de uma atualização do fluxo. O chatbot não interpreta texto livre na interface e não acessa contas ou sistemas externos. A base, as soluções e os benchmarks são sintéticos. Antes de atender clientes reais, são necessárias políticas revisadas, canais funcionais, autorização, privacidade e avaliação com pessoas.
-
-Desenvolvido com assistência de IA a partir da proposta de [Arthur Moury](https://github.com/ArthurMoury). Código e dados de exemplo sob [licença MIT](LICENSE).
+Projeto de [Arthur Moury](https://github.com/ArthurMoury), desenvolvido com assistência de IA. Código e dados fictícios sob [licença MIT](LICENSE).

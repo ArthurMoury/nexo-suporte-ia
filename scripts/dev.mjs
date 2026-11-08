@@ -7,11 +7,11 @@ const types={'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/ja
 const server=createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');
-    if(url.pathname==='/api/chat'){
+    if(['/api/chat','/api/config','/api/connection'].includes(url.pathname)){
       const request=new Request(`http://${req.headers.host}${url.pathname}`,{method:req.method,headers:req.headers,...(!['GET','HEAD'].includes(req.method)?{body:req,duplex:'half'}:{})});
       const response=await handler(request);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));return;
     }
-    const dataFile={'/knowledge.json':'data/knowledge.json','/support-flow.json':'data/support-flow.json'}[url.pathname];
+    const dataFile={'/knowledge.json':'data/knowledge.json'}[url.pathname];
     const file=dataFile?resolve(dataFile):resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
     if(!dataFile&&!file.startsWith(root+sep)){res.writeHead(403);res.end();return;}
     res.setHeader('Content-Type',types[extname(file)]||'application/octet-stream');res.end(await readFile(file));

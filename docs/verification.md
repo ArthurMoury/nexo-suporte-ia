@@ -1,3 +1,22 @@
+# Versão atual: agente LLM com ferramentas Python — 08/11/2026
+
+A interface voltou ao texto livre. A árvore de cinco assuntos, seus caminhos, o botão de atendente e o texto “Pronto para ajudar” foram removidos. O perfil Arthur Moury oferece conexão de API e a base explica o ciclo completo de ida e volta.
+
+Verificações desta versão:
+
+- 16 testes JavaScript e 10 testes Python aprovados, além do build. Os 24 casos determinísticos continuam como referência histórica, sem medir o novo LLM.
+- Quatro testes reais na publicação passaram: reembolso com premissa errada, plano Pro, continuação sobre Business e indisponibilidade de WhatsApp. Todos confirmaram execução de `rag_search` em Python e retorno dos resultados ao modelo. [Relatório real](python-agent-live.json).
+- O teste de conexão no perfil foi concluído com `gpt-4.1-mini` e ferramenta Python verificada. O adaptador Gemini foi testado com transporte simulado; não foi usada uma chave pessoal Gemini.
+- No navegador foram conferidos resposta livre, continuação com histórico, restauração após recarregar, fontes fechadas por padrão e abertura do rastro de execução.
+- Perfil e janela de conexão conferidos em desktop e celular de 390 × 844. A tabela da base recebeu contenção de largura para rolar dentro de seu contêiner.
+- Frontend e transporte publicados na Netlify; Python nativo publicado separadamente na Vercel.
+
+Capturas atuais: [chat e execução Python](llm-agent.png) e [configuração de API](api-connection.png). A imagem principal do README usa a captura do novo chat.
+
+---
+
+Os registros abaixo são históricos e descrevem versões anteriores.
+
 # Verificação da versão inicial
 
 Data: **07/11/2026**.

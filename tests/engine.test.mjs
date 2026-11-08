@@ -1,7 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {baseline,runAgent,knowledge,validateQuestion} from '../src/engine.mjs';
-import handler from '../netlify/functions/chat.mjs';
+import {createAgentHandler} from '../src/python-proxy.mjs';
+const handler=createAgentHandler({env:{OPENAI_API_KEY:'test-secret-value'},fetcher:async()=>Response.json({answer:'Resposta do teste',runtime:'python',mode:'llm',provider:'openai',model:'test',trace:[],citations:[]})});
 
 test('refund deadline is 7 calendar days, not an invented deadline',()=>{
   const out=baseline('Posso pedir reembolso em 70 dias?');
@@ -65,9 +66,9 @@ test('HTTP contract rejects malformed JSON, unsafe origins and large payloads',a
   const req=(body,headers={})=>new Request('https://nexo.example/api/chat',{method:'POST',headers:{'Content-Type':'application/json',...headers},body});
   assert.equal((await handler(req('{'))).status,400);
   assert.equal((await handler(req('{"question":"planos"}',{Origin:'https://attacker.example'}))).status,403);
-  assert.equal((await handler(req('x'.repeat(9000)))).status,413);
+  assert.equal((await handler(req('x'.repeat(46000)))).status,413);
   assert.equal((await handler(req('{"question":42}'))).status,400);
   assert.equal((await handler(new Request('https://nexo.example/api/chat'))).status,405);
   const res=await handler(req('{"question":"Quais planos?","mode":"base"}'));
-  assert.equal(res.status,200);assert.equal(res.headers.get('Cache-Control'),'no-store');assert.equal((await res.json()).mode,'base');
+  assert.equal(res.status,200);assert.equal(res.headers.get('Cache-Control'),'no-store');assert.equal((await res.json()).mode,'llm');
 });

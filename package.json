@@ -3,13 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Agente de suporte com políticas verificáveis, ferramentas e avaliação contínua.",
+  "description": "Agente de suporte com pol\u00edticas verific\u00e1veis, ferramentas e avalia\u00e7\u00e3o cont\u00ednua.",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
     "evaluate": "python3 evaluation/evaluate.py",
-    "check": "npm test && npm run evaluate && npm run build"
+    "check": "npm test && PYTHONPATH=python_api python3 -m unittest discover -s python_api/tests -v && npm run evaluate && npm run build",
+    "test:python": "PYTHONPATH=python_api python3 -m unittest discover -s python_api/tests -v"
   },
-  "engines": {"node": ">=22"}
+  "engines": {
+    "node": ">=22"
+  }
 }

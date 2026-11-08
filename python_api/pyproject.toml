@@ -1,0 +1,7 @@
+[project]
+name = "nexo-python-agent"
+version = "1.0.0"
+requires-python = ">=3.12,<3.13"
+
+[tool.vercel]
+entrypoint = "api.agent:handler"
