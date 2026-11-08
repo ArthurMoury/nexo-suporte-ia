@@ -39,3 +39,18 @@ Capturas da versão publicada: [tela inicial](interface-v2.png) e [sobre o proje
 A navegação principal ganhou controles para abrir e fechar, transição de 260 ms e preferência separada para computador e celular no armazenamento da sessão. No computador o conteúdo ocupa a área liberada. No celular o menu aparece sobre o conteúdo, com fundo atenuado, foco contido e fechamento por Esc, botão, toque fora e seleção de seção. Com movimento reduzido, as transições ficam desativadas. O painel de fontes mantém seu controle independente.
 
 A nova captura [interface-v3.png](interface-v3.png) mostra a versão publicada e substitui a imagem principal do README. O novo caminho também evita reutilizar o endereço da captura anterior nos caches de imagens. `npm run check` passou com 12 testes, 24 casos determinísticos e build. A abertura, o fechamento, a preferência após recarregar e o menu móvel foram conferidos no navegador.
+
+## Atendimento por opções, 08/11/2026
+
+A experiência principal passou a começar com cinco assuntos, sem campo de mensagem livre. Assuntos levam a categorias, problemas específicos e 24 soluções cadastradas. A interface oferece retorno de etapa, menu inicial, confirmação de resolução e resumo para atendimento humano com o caminho completo.
+
+Verificações desta versão:
+
+- `npm run check`: 18 testes JavaScript, 24 casos do benchmark Python da API experimental e build aprovados.
+- Os seis testes novos percorrem todas as 24 situações, verificam fontes, IDs, restauração, retorno, caminhos inválidos e resumo de encaminhamento.
+- No navegador, foram percorridos os caminhos de senha e reembolso, incluindo confirmação de resolução, atualização da página, retorno de etapas e cópia do resumo humano.
+- O atendimento financeiro foi conferido no celular em 390 × 844.
+- Na publicação Netlify, foi percorrido Equipe e arquivos → Arquivos e exportação → Meu arquivo não pode ser enviado, chegando aos passos da solução.
+- A tela inicial publicada mostra as cinco opções. O atendimento guiado não chama o endpoint de mensagens nem um modelo de IA. A API permanece como experimento separado.
+
+Capturas atuais: [menu inicial](guided-support.png) e [solução com passos](guided-solution.png). Os registros e imagens anteriores documentam versões históricas da interface de mensagens.

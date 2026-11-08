@@ -1,3 +1,4 @@
+import {indexFlow, resolvePath, solutionFor, handoffFor} from './support-flow.js';
 const $ = selector => document.querySelector(selector);
 const nodes = (tag, className, text) => {
   const el = document.createElement(tag);
@@ -65,269 +66,234 @@ document.addEventListener('keydown', event => {
 });
 setSidebarOpen(preferredSidebarState(), {remember:false, focus:true});
 requestAnimationFrame(() => app.classList.add('sidebar-ready'));
-app.addEventListener('transitionend', event => {
-  if (event.propertyName === 'grid-template-columns') adjustComposer();
-});
 
-const storageKey = 'nexo-ia-conversations-v1';
-let knowledge;
-let busy = false;
+const storageKey = 'nexo-ia-support-sessions-v2';
+let knowledge, flow;
+let ready = false;
 let activeId = null;
 let conversations = [];
 let examples = [];
-const drafts = new Map();
-
-function validResult(value) {
-  return value && typeof value.answer === 'string' && value.answer.length < 30000 &&
-    Array.isArray(value.citations) && value.citations.every(x => x && typeof x.id === 'string' && typeof x.title === 'string') &&
-    Array.isArray(value.trace) && value.trace.every(x => x && typeof x.tool === 'string') &&
-    [null, undefined, 'string'].includes(value.handoff == null ? value.handoff : typeof value.handoff);
+const emptySession = () => ({path:[], status:'active'});
+function currentSession() { return [...conversations, ...examples].find(s => s.id === activeId) || emptySession(); }
+function saveSessions() {
+  try { sessionStorage.setItem(storageKey, JSON.stringify(conversations)); } catch { /* In-memory support also works without browser storage. */ }
 }
-try {
-  const stored = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
-  if (Array.isArray(stored)) conversations = stored.filter(c => c && typeof c.id === 'string' &&
-    typeof c.title === 'string' && Array.isArray(c.turns) && c.turns.every(t => typeof t.question === 'string' && validResult(t.result)))
-    .slice(0, 12).map(c => ({id:c.id, title:c.title.slice(0, 80), turns:c.turns.slice(-20)}));
-} catch { /* The interface also works when browser storage is unavailable. */ }
-
-function saveConversations() {
-  try { sessionStorage.setItem(storageKey, JSON.stringify(conversations)); }
-  catch { /* Keep the in-memory history when session storage is full or unavailable. */ }
+function restoreSessions() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+    if (!Array.isArray(saved)) return;
+    conversations = saved.filter(s => {
+      if (!s || typeof s.id !== 'string' || typeof s.title !== 'string' || !['active','resolved','handoff'].includes(s.status)) return false;
+      try {
+        const path = resolvePath(flow, s.path);
+        return s.status !== 'resolved' || !!path.at(-1)?.solution;
+      } catch { return false; }
+    }).slice(0,12).map(s => ({id:s.id, title:s.title.slice(0,80), path:s.path, status:s.status}));
+  } catch { /* Keep an empty history when storage is absent or invalid. */ }
 }
-function currentConversation() { return [...conversations, ...examples].find(c => c.id === activeId); }
+function editableSession() {
+  let session = currentSession();
+  if (!session.id || session.example) {
+    session = {id:crypto.randomUUID(), title:'Atendimento guiado', path:[...session.path], status:session.status};
+    conversations.unshift(session); conversations = conversations.slice(0,12); activeId = session.id;
+  }
+  return session;
+}
+function recordSession(session) {
+  const path = resolvePath(flow, session.path);
+  session.title = path.length ? [path[0].label, ...(path.at(-1).solution ? [path.at(-1).label] : [])].join(' · ').slice(0,80) : 'Atendimento guiado';
+  conversations = [session, ...conversations.filter(s => s.id !== session.id)].slice(0,12);
+  saveSessions(); renderHistory();
+}
 function switchView(name) {
   document.querySelectorAll('.view').forEach(el => el.hidden = el.id !== `${name}-view`);
   document.querySelectorAll('.nav').forEach(el => {
     const active = el.dataset.view === name;
     el.classList.toggle('active', active);
-    if (active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
+    if (active) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current');
   });
   if (mobileSidebar.matches && sidebarOpen) setSidebarOpen(false);
   $('#main').focus({preventScroll:true});
-  if (name === 'chat') adjustComposer();
 }
+document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => switchView(el.dataset.view)));
 function setSourcesOpen(open) {
-  $('#chat-view').classList.toggle('sources-open', open);
-  $('#context-toggle').setAttribute('aria-expanded', String(open));
+  $('#chat-view').classList.toggle('sources-open',open);
+  $('#context-toggle').setAttribute('aria-expanded',String(open));
   $('#context-panel').hidden = !open;
 }
 $('#context-toggle').addEventListener('click', () => setSourcesOpen($('#context-toggle').getAttribute('aria-expanded') !== 'true'));
-document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => switchView(el.dataset.view)));
-
-function adjustComposer() {
-  const input = $('#question');
-  input.style.height = '0px';
-  input.style.height = `${Math.max(28, Math.min(input.scrollHeight, 180))}px`;
-  input.style.overflowY = input.scrollHeight > 180 ? 'auto' : 'hidden';
-  $('#counter').textContent = input.value.length > 1000 ? `${input.value.length}/1200` : '';
-}
-$('#question').addEventListener('input', adjustComposer);
-$('#question').addEventListener('keydown', event => {
-  if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
-    event.preventDefault();
-    if (!busy) $('#chat-form').requestSubmit();
-  }
-});
-function showWelcome() {
-  $('#messages').append($('#welcome-template').content.cloneNode(true));
-}
-function clearSources() {
-  $('#source-count').textContent = '0';
-  $('#sources').replaceChildren(nodes('p', 'empty-source', 'Os artigos consultados aparecem aqui depois da sua pergunta.'));
-  $('#trace').replaceChildren(nodes('li', '', 'Aguardando uma pergunta'));
-}
 function historyIcon() {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox','0 0 24 24'); svg.setAttribute('aria-hidden','true');
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d','M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z');
-  svg.append(path); return svg;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d','M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z');svg.append(p);return svg;
 }
-function historyButton(conversation) {
-  const button = nodes('button', 'history-item', undefined);
-  button.classList.toggle('active', conversation.id === activeId);
-  button.title = conversation.title;
-  if (conversation.id === activeId) button.setAttribute('aria-current', 'true');
-  button.append(historyIcon(), nodes('span', '', conversation.title));
-  if (conversation.example) button.append(nodes('small', '', 'Exemplo'));
-  button.disabled = busy;
-  button.addEventListener('click', () => openConversation(conversation.id));
+function historyButton(session) {
+  const button=nodes('button','history-item');button.title=session.title;button.classList.toggle('active',session.id===activeId);
+  if (session.id===activeId) button.setAttribute('aria-current','true');
+  button.append(historyIcon(),nodes('span','',session.title));
+  if(session.example) button.append(nodes('small','','Exemplo'));
+  else if(session.status==='resolved') button.append(nodes('small','','Resolvido'));
+  button.addEventListener('click',()=>{activeId=session.id;setSourcesOpen(false);renderConversation();renderHistory();switchView('chat');});
   return button;
 }
 function renderHistory() {
-  $('#history-count').textContent = conversations.length;
+  $('#history-count').textContent=conversations.length;
   $('#history-list').replaceChildren(...conversations.map(historyButton));
-  if (!conversations.length) $('#history-list').append(nodes('p', 'history-empty', 'Suas conversas aparecem aqui.'));
+  if(!conversations.length) $('#history-list').append(nodes('p','history-empty','Seus atendimentos aparecem aqui.'));
   $('#example-list').replaceChildren(...examples.map(historyButton));
-  $('#mobile-history-list').replaceChildren(...[...conversations, ...examples].map(historyButton));
-}
-function openConversation(id) {
-  if (busy) return;
-  drafts.set(activeId, $('#question').value);
-  activeId = id;
-  const conversation = currentConversation();
-  if (!conversation) { activeId = null; return; }
-  $('#messages').replaceChildren();
-  clearSources(); setSourcesOpen(false);
-  for (const turn of conversation.turns) {
-    message('user', turn.question);
-    renderAnswer(turn.result);
-  }
-  if (!conversation.turns.length) showWelcome();
-  if (conversation.turns.length) updateSources(conversation.turns.at(-1).result);
-  $('#question').value = drafts.get(id) || '';
-  $('#request-status').textContent = conversation.example ? 'Conversa de exemplo. Você pode continuar com uma nova pergunta.' : '';
-  $('#request-status').className = 'request-status';
-  switchView('chat'); renderHistory(); adjustComposer();
-  $('.mobile-history').open = false;
-  $('#messages').scrollTop = $('#messages').scrollHeight;
+  $('#mobile-history-list').replaceChildren(...[...conversations,...examples].map(historyButton));
 }
 function newConversation() {
-  if (busy) return;
-  drafts.set(activeId, $('#question').value);
-  activeId = null;
-  $('#messages').replaceChildren(); showWelcome();
-  clearSources(); setSourcesOpen(false);
-  $('#question').value = ''; $('#request-status').textContent = '';
-  $('#request-status').className = 'request-status';
-  switchView('chat'); renderHistory(); adjustComposer();
-  $('.mobile-history').open = false;
-  $('#question').focus({preventScroll:true});
+  activeId=null;setSourcesOpen(false);renderConversation();renderHistory();switchView('chat');
 }
-$('#reset').addEventListener('click', newConversation);
-$('#messages').addEventListener('click', event => {
-  const button = event.target.closest('[data-question]');
-  if (!button || busy) return;
-  $('#question').value = button.dataset.question;
-  adjustComposer(); $('#chat-form').requestSubmit();
-});
-
-function updateSources(result) {
-  $('#source-count').textContent = result.citations.length;
-  $('#sources').replaceChildren();
-  result.citations.forEach(source => {
-    const doc = knowledge?.articles.find(x => x.id === source.id);
-    const details = nodes('details', 'source'); details.id = `source-${source.id}`;
-    details.append(nodes('summary', '', source.title), nodes('small', '', source.category),
-      nodes('p', '', doc?.body ?? 'Consulte o artigo na base de conhecimento.'));
-    $('#sources').append(details);
-  });
-  if (!result.citations.length) $('#sources').append(nodes('p', 'empty-source', 'Nenhum artigo cobre esta solicitação. O atendimento pode continuar com uma pessoa.'));
-  const labels = {search_knowledge:'Consultou a base de conhecimento', prepare_handoff:'Preparou um resumo para atendimento',
-    approved_answer:'Conferiu as fontes e entregou a resposta', policy_guard:'Aplicou os limites das políticas', model_fallback:'Usou a busca sem modelo'};
-  $('#trace').replaceChildren(...result.trace.map(step => nodes('li', '',
-    step.tool === 'prepare_handoff' && step.status === 'requested' ? 'Solicitou um encaminhamento' : labels[step.tool] ?? step.tool)));
+$('#reset').addEventListener('click',newConversation);
+function choose(id) {
+  if(!ready) return;
+  const current=currentSession();
+  const path=resolvePath(flow,current.path);const parent=path.at(-1)||flow;
+  if(current.status!=='active'||!parent.children?.some(n=>n.id===id)) return;
+  const session=editableSession();session.path.push(id);session.status='active';recordSession(session);renderConversation(true);
 }
-function message(role, text) {
-  const el = nodes('article', `message ${role}`);
-  if (role === 'assistant') {
-    const head = nodes('div', 'message-header');
-    const logo = nodes('img'); logo.src = '/logo.svg'; logo.alt = '';
-    head.append(logo, nodes('strong', '', 'Nexo IA')); el.append(head);
+function goBack() {
+  if(!ready) return;
+  const session=editableSession();
+  if(session.status!=='active')session.status='active';else session.path.pop();
+  recordSession(session);renderConversation(true);
+}
+function goHome() {
+  if(!ready)return;
+  if(!currentSession().id) {renderConversation();return;}
+  const session=editableSession();session.path=[];session.status='active';recordSession(session);setSourcesOpen(false);renderConversation(true);
+}
+function requestHuman() {
+  if(!ready)return;
+  const session=editableSession();session.status='handoff';recordSession(session);renderConversation(true);
+}
+function resolveIssue() {
+  const session=editableSession();session.status='resolved';recordSession(session);renderConversation(true);
+}
+$('#guide-back').addEventListener('click',goBack);$('#guide-home').addEventListener('click',goHome);$('#guide-human').addEventListener('click',requestHuman);
+function message(role,text) {
+  const el=nodes('article',`message ${role}`);
+  if(role==='assistant') {
+    const header=nodes('div','message-header');const logo=nodes('img');logo.src='/logo.svg';logo.alt='';
+    header.append(logo,nodes('strong','','Assistente Nexo'),nodes('small','','Atendimento guiado'));el.append(header);
   }
-  el.append(nodes('p', role === 'user' ? '' : 'message-text', text));
-  $('#messages').append(el); return el;
+  if(text)el.append(nodes('p',role==='user'?'':'message-text',text));$('#messages').append(el);return el;
 }
-function renderAnswer(result) {
-  const el = message('assistant', result.answer);
-  const label = result.mode === 'example' ? 'Exemplo' : result.mode === 'ia' ? 'Agente com IA' : 'Consulta sem modelo';
-  el.querySelector('.message-header').append(nodes('small', '', label));
-  const meta = nodes('div', 'message-meta');
-  result.citations.forEach(source => {
-    const button = nodes('button', 'citation-chip', `▤ ${source.title}`);
-    button.addEventListener('click', () => {
-      updateSources(result); setSourcesOpen(true);
-      const target = document.getElementById(`source-${source.id}`);
-      if (target) { target.open = true; target.scrollIntoView({block:'nearest'}); }
-    }); meta.append(button);
-  }); el.append(meta);
-  if (result.detail) el.append(nodes('p', 'fallback-note', result.detail));
-  if (result.handoff) {
-    const handoff = nodes('div', 'handoff'); const pre = nodes('pre', '', result.handoff);
-    const copy = nodes('button', '', 'Copiar resumo');
-    copy.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(result.handoff); copy.textContent = 'Resumo copiado ✓'; }
-      catch { copy.textContent = 'Selecione o resumo acima para copiar'; pre.tabIndex = 0; pre.focus(); }
-    });
-    handoff.append(nodes('h3', '', 'Resumo para atendimento'), pre, copy); el.append(handoff);
+function action(label,callback,className='guide-action') {
+  const button=nodes('button',className,label);button.type='button';button.addEventListener('click',callback);return button;
+}
+function optionList(node,container) {
+  const group=nodes('div','guide-options');group.setAttribute('role','group');group.setAttribute('aria-label',node.prompt);
+  for(const [i,child] of node.children.entries()) {
+    const button=nodes('button','guide-option');button.type='button';
+    const icon=nodes('span','guide-option-icon',node===flow?['◎','◫','↶','▤','⌁'][i]:'');icon.setAttribute('aria-hidden','true');
+    const text=nodes('span','guide-option-copy');text.append(nodes('strong','',child.label));
+    if(child.description)text.append(nodes('small','',child.description));
+    const arrow=nodes('span','guide-option-arrow','›');arrow.setAttribute('aria-hidden','true');button.append(icon,text,arrow);
+    button.addEventListener('click',()=>choose(child.id));group.append(button);
   }
+  container.append(group);
+  if(node!==flow) container.append(action('Meu problema não está na lista',requestHuman,'guide-alternative'));
+  return group;
+}
+function citation(article) {
+  const button=nodes('button','citation-chip',`▤ ${article.title}`);
+  button.addEventListener('click',()=>{setSourcesOpen(true);const target=document.getElementById(`source-${article.id}`);if(target){target.open=true;target.scrollIntoView({block:'nearest'});}});return button;
+}
+function renderSolution(node) {
+  const solution=solutionFor(node,knowledge.articles);const el=message('assistant');
+  el.append(nodes('h2','solution-title',solution.title),nodes('p','message-text',solution.intro));
+  const steps=nodes('ol','solution-steps');solution.steps.forEach(step=>steps.append(nodes('li','',step)));el.append(steps);
+  const meta=nodes('div','message-meta');meta.append(citation(solution.article));el.append(meta);
+  if(solution.needsHuman)el.append(nodes('p','solution-note','Esta solicitação precisa de análise humana. Você pode preparar um resumo com as opções escolhidas.'));
   return el;
 }
-async function sendQuestion(event) {
-  event.preventDefault(); if (busy) return;
-  const q = $('#question').value.trim(); if (!q) return;
-  let conversation = currentConversation();
-  if (!conversation || conversation.example) {
-    conversation = {id:crypto.randomUUID(), title:q.slice(0, 80), turns:conversation?.turns.slice() || []};
-    conversations.unshift(conversation); conversations = conversations.slice(0, 12); activeId = conversation.id;
-  }
-  busy = true; $('#send').disabled = true; $('#reset').disabled = true; $('#question').readOnly = true;
-  renderHistory();
-  $('.welcome')?.remove(); const userMessage = message('user', q); $('#question').value = ''; adjustComposer();
-  const loading = nodes('div', 'message loading', 'Consultando as informações…');
-  $('#messages').append(loading); loading.scrollIntoView({block:'nearest'});
-  $('#request-status').className = 'request-status'; $('#request-status').textContent = '';
-  try {
-    const response = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({question:q, mode:$('#mode').value}), signal:AbortSignal.timeout(55000)});
-    if (!response.ok) {
-      if (response.status === 429) throw new Error('Muitas consultas. Aguarde um minuto e tente novamente.');
-      throw new Error('A consulta não foi concluída. Tente enviar novamente.');
-    }
-    const result = await response.json(); if (!validResult(result)) throw new Error('A resposta não pôde ser carregada. Tente novamente.');
-    loading.remove(); const el = renderAnswer(result);
-    conversation.turns.push({question:q, result}); conversation.turns = conversation.turns.slice(-20);
-    // Move a continued conversation to the top without changing its title.
-    conversations = [conversation, ...conversations.filter(c => c.id !== conversation.id)].slice(0,12);
-    drafts.delete(activeId); saveConversations(); updateSources(result); el.scrollIntoView({block:'nearest'});
-  } catch (error) {
-    loading.remove(); userMessage.remove();
-    if (!conversation.turns.length) conversations = conversations.filter(c => c.id !== conversation.id);
-    $('#question').value = q; adjustComposer(); $('#request-status').className = 'request-status error';
-    $('#request-status').textContent = error.name === 'TimeoutError' ? 'A consulta demorou demais. Tente novamente.' : error.message;
-  } finally {
-    busy = false; $('#send').disabled = false; $('#reset').disabled = false; $('#question').readOnly = false;
-    renderHistory(); $('#question').focus({preventScroll:true});
-  }
+function renderHandoff(path) {
+  const selected=path.map(n=>n.id);const draft=handoffFor(flow,selected);const policy=knowledge.articles.find(a=>a.id==='atendimento');
+  message('user','Quero continuar com um atendente.');const el=message('assistant','Preparei um resumo do caminho que você percorreu. Você pode copiá-lo para continuar o atendimento.');
+  const box=nodes('div','handoff');const pre=nodes('pre','',draft);
+  const copy=action('Copiar resumo',async()=>{try{await navigator.clipboard.writeText(draft);copy.textContent='Resumo copiado ✓';}catch{copy.textContent='Selecione o resumo acima para copiar';pre.tabIndex=0;pre.focus();}});
+  box.append(nodes('h3','','Resumo para atendimento'),pre,copy);el.append(box,nodes('p','message-text handoff-policy',policy.body));
+  const meta=nodes('div','message-meta');meta.append(citation(policy));el.append(meta);
+  el.append(action('Voltar ao atendimento guiado',goBack));
 }
-$('#chat-form').addEventListener('submit', sendQuestion);
-
-function renderKnowledge(filter = '') {
-  const norm = value => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
-  const articles = knowledge.articles.filter(a => norm(`${a.title} ${a.category} ${a.body}`).includes(norm(filter)));
-  $('#article-count').textContent = `${articles.length} ${articles.length === 1 ? 'artigo' : 'artigos'}`;
-  $('#knowledge-list').replaceChildren(...articles.map(article => {
-    const details = nodes('details'); details.id = `article-${article.id}`;
-    details.append(nodes('summary', '', article.title), nodes('p', '', article.body), nodes('small', '', article.category));
-    return details;
-  }));
-  if (!articles.length) $('#knowledge-list').append(nodes('p', '', 'Nenhum artigo encontrado. Tente outro termo.'));
+function updateSources(path,status) {
+  const leaf=path.at(-1);const ids=[...(leaf?.articleId?[leaf.articleId]:[]),...(status==='handoff'?['atendimento']:[])];
+  const docs=[...new Set(ids)].map(id=>knowledge.articles.find(a=>a.id===id));
+  $('#source-count').textContent=docs.length;$('#sources').replaceChildren();
+  docs.forEach(doc=>{const details=nodes('details','source');details.id=`source-${doc.id}`;details.append(nodes('summary','',doc.title),nodes('small','',doc.category),nodes('p','',doc.body));$('#sources').append(details);});
+  if(!docs.length)$('#sources').append(nodes('p','empty-source','Escolha as opções para chegar a uma solução. A política relacionada aparecerá aqui.'));
+  const trace=path.map(n=>`Você escolheu: ${n.label}`);
+  if(leaf?.solution)trace.push('Localizou a solução cadastrada e sua política de referência.');
+  if(status==='handoff')trace.push('Preparou um resumo local, sem enviar mensagem ou abrir chamado.');
+  if(status==='resolved')trace.push('Você confirmou que a orientação resolveu o problema.');
+  $('#trace').replaceChildren(...(trace.length?trace:['Aguardando sua escolha de assunto']).map(t=>nodes('li','',t)));
+}
+function renderConversation(focus=false) {
+  $('#messages').replaceChildren();
+  if(!ready){$('#messages').append(nodes('p','guide-loading','Carregando as opções de atendimento…'));return;}
+  const session=currentSession();const path=resolvePath(flow,session.path);const current=path.at(-1)||flow;
+  let controls;
+  if(!path.length&&session.status==='active') {
+    const welcome=nodes('div','welcome guided-welcome');const logo=nodes('img','welcome-logo');logo.src='/logo.svg';logo.alt='';logo.width=60;logo.height=60;
+    welcome.append(logo,nodes('h1','','Como podemos ajudar?'),nodes('p','','Escolha um assunto. Eu guio você até a solução.'));
+    controls=optionList(flow,welcome);$('#messages').append(welcome);
+  } else {
+    message('assistant','Olá! Vamos encontrar a orientação para o seu problema.');
+    path.forEach((node,i)=>{
+      message('user',node.label);
+      if(node.solution)renderSolution(node);
+      else {
+        const el=message('assistant',node.prompt);
+        if(i===path.length-1&&session.status==='active')controls=optionList(node,el);
+      }
+    });
+    if(session.status==='handoff')renderHandoff(path);
+    else if(session.status==='resolved') {
+      message('user','Sim, resolveu.');const el=message('assistant','Ótimo! Este atendimento foi marcado como resolvido. Se precisar, escolha outro assunto.');
+      controls=nodes('div','guide-feedback');controls.append(action('Escolher outro assunto',goHome));el.append(controls);
+    } else if(current.solution) {
+      const el=message('assistant','Essa orientação resolveu seu problema?');controls=nodes('div','guide-feedback');
+      controls.append(action('Sim, resolveu',resolveIssue,'guide-action primary'),action('Ainda preciso de ajuda',requestHuman));el.append(controls);
+    }
+  }
+  updateSources(path,session.status);
+  $('#guide-back').disabled=!path.length&&session.status==='active';
+  $('#guide-home').disabled=!path.length&&session.status==='active';
+  $('#guide-human').disabled=session.status==='handoff';
+  $('#guide-step').textContent=session.status==='resolved'?'Atendimento resolvido':session.status==='handoff'?'Resumo preparado':current.solution?'Sua orientação':`Escolha ${path.length+1} de 3`;
+  $('#guide-location').textContent=path.length?path.map(n=>n.label).join(' / '):'Assunto → Categoria → Problema';
+  $('#guide-location').title=path.map(n=>n.label).join(' / ');
+  if(path.length||session.status!=='active')$('#messages').scrollTop=$('#messages').scrollHeight;
+  else $('#messages').scrollTop=0;
+  if(focus) (controls?.querySelector('button')||$('#guide-back')).focus({preventScroll:true});
+}
+function renderKnowledge(filter='') {
+  const norm=t=>t.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+  const articles=knowledge.articles.filter(a=>norm(`${a.title} ${a.category} ${a.body}`).includes(norm(filter)));
+  $('#article-count').textContent=`${articles.length} ${articles.length===1?'artigo':'artigos'}`;
+  $('#knowledge-list').replaceChildren(...articles.map(article=>{const el=nodes('details');el.id=`article-${article.id}`;el.append(nodes('summary','',article.title),nodes('p','',article.body),nodes('small','',article.category));return el;}));
+  if(!articles.length)$('#knowledge-list').append(nodes('p','','Nenhum artigo encontrado. Tente outro termo.'));
 }
 function buildExamples() {
-  examples = [
-    {id:'example-plans', title:'Planos e valores', question:'Quais são os planos e preços?', article:'planos'},
-    {id:'example-access', title:'Recuperar meu acesso', question:'Como recuperar minha senha?', article:'acesso'},
-    {id:'example-refund', title:'Como funciona o reembolso', question:'Qual é o prazo de reembolso?', article:'reembolso'}
-  ].map(example => {
-    const article = knowledge.articles.find(a => a.id === example.article);
-    return {id:example.id, title:example.title, example:true, turns:[{question:example.question,
-      result:{answer:article.body, mode:'example', status:'answered', citations:[{id:article.id,title:article.title,category:article.category}],
-        trace:[{tool:'search_knowledge'},{tool:'approved_answer'}], handoff:null}}]};
-  }); renderHistory();
+  examples=[
+    {id:'example-access',title:'Recuperar minha senha',path:['conta','recuperar-acesso','esqueci-senha']},
+    {id:'example-refund',title:'Reembolso da primeira contratação',path:['financeiro','devolver-pagamento','primeira-compra']},
+    {id:'example-files',title:'Resolver um problema de arquivo',path:['equipe','conteudo','upload']}
+  ].map(e=>({...e,example:true,status:'active'}));
 }
-showWelcome(); renderHistory(); adjustComposer();
+renderConversation();renderHistory();
 try {
-  const response = await fetch('/knowledge.json'); if (!response.ok) throw new Error('base');
-  knowledge = await response.json(); renderKnowledge(); buildExamples();
-  knowledge.demoAccounts.forEach(account => {
-    const row = nodes('tr'); [account.name, account.plan, account.seats, account.projects].forEach(value => row.append(nodes('td', '', value)));
-    $('#accounts').append(row);
-  });
-  knowledge.demoTickets.forEach(ticket => {
-    const row = nodes('div', 'ticket-row'); const title = nodes('div', '', ticket.topic);
-    title.append(nodes('small', '', ticket.id)); row.append(title, nodes('span', '', ticket.status === 'resolved' ? 'Resolvido' : 'Aguardando humano'));
-    $('#tickets').append(row);
-  });
-} catch { $('#knowledge-list').append(nodes('p', '', 'Não foi possível carregar a base. Recarregue a página para tentar novamente.')); }
-$('#knowledge-search').addEventListener('input', event => { if (knowledge) renderKnowledge(event.target.value); });
-window.addEventListener('resize', adjustComposer);
+  const responses=await Promise.all([fetch('/knowledge.json'),fetch('/support-flow.json')]);
+  if(responses.some(r=>!r.ok))throw new Error('Content unavailable');
+  [knowledge,flow]=await Promise.all(responses.map(r=>r.json()));indexFlow(flow,knowledge.articles);
+  restoreSessions();buildExamples();ready=true;renderConversation();renderHistory();renderKnowledge();
+  knowledge.demoAccounts.forEach(a=>{const row=nodes('tr');[a.name,a.plan,a.seats,a.projects].forEach(value=>row.append(nodes('td','',value)));$('#accounts').append(row);});
+  knowledge.demoTickets.forEach(t=>{const row=nodes('div','ticket-row');const title=nodes('div','',t.topic);title.append(nodes('small','',t.id));row.append(title,nodes('span','',t.status==='resolved'?'Resolvido':'Aguardando humano'));$('#tickets').append(row);});
+} catch {
+  $('#messages').replaceChildren(nodes('p','guide-loading','Não foi possível carregar o atendimento.'));
+  $('#messages').append(action('Tentar novamente',()=>location.reload()));
+  $('#guide-back').disabled=true;$('#guide-home').disabled=true;$('#guide-human').disabled=true;
+}
+$('#knowledge-search').addEventListener('input',e=>{if(ready)renderKnowledge(e.target.value);});

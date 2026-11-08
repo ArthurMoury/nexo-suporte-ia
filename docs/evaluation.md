@@ -48,3 +48,9 @@ As notas de relevance e faithfulness são julgamentos de outro modelo. Compare c
 4. Compare baseline e agente com o mesmo conjunto.
 5. Inspecione rastros e intervenções, além de custo e latência.
 6. Só apresente números reais do modo avaliado, sem misturar fallback com execução de IA.
+
+## Atendimento guiado por escolhas
+
+A interface atual segue `data/support-flow.json`, sem chamar `/api/chat`. Seus testes estão em `tests/support-flow.test.mjs` e usam `public/support-flow.js`, o mesmo módulo do navegador. Eles percorrem as 24 situações dos cinco assuntos e verificam estrutura, fontes, navegação, restauração e encaminhamento.
+
+O benchmark Python acima continua avaliando a API experimental de mensagens. Seus resultados não medem a eficácia do fluxo guiado. A confirmação de resolução na interface é um relato do usuário, não prova de execução de uma operação externa. Para avaliar o novo fluxo com pessoas, medir conclusão por assunto, retorno de etapas, abandono e necessidade de atendimento humano com consentimento e dados apropriados.

@@ -1,44 +1,41 @@
 # Arquitetura e decisões
 
-O produto é uma demonstração de suporte de uma empresa fictícia chamada Nexo. Seu problema é responder dúvidas recorrentes sem alterar preços e políticas nem afirmar que executou uma operação de conta.
+A experiência principal é um chatbot de suporte guiado por escolhas. O usuário começa por um dos cinco assuntos, escolhe uma categoria e identifica o problema. O sistema apresenta uma solução cadastrada e oferece confirmação de resolução ou resumo para atendimento humano.
 
-## Contratos
+## Fluxo de atendimento
 
-`POST /api/chat` recebe `{"question":"...","mode":"auto"}` ou `mode: "base"`. A resposta tem `answer`, `citations`, `status`, `mode`, `handoff`, `trace`, `latencyMs` e `knowledgeVersion`. Cada consulta é independente. O histórico visual não é reenviado ao modelo.
+`data/support-flow.json` é a fonte da árvore. Existem cinco assuntos, categorias intermediárias e 24 situações finais. Cada situação tem ID, rótulo, política relacionada, introdução, passos e indicação de análise humana quando necessária.
 
-No modo IA, o modelo controla consultas a `search_knowledge` e solicitações de `prepare_handoff`. O controlador aceita somente essas ferramentas. No máximo quatro chamadas de modelo são feitas por pergunta, cada uma com timeout de 12 segundos e limite de 450 tokens de saída. A configuração desativa chamadas paralelas. O provedor recebe a pergunta e os resultados das ferramentas da execução atual.
+`public/support-flow.js` contém funções puras para indexar e validar a árvore, resolver um caminho de escolhas e preparar o resumo humano. Os testes usam as mesmas funções do navegador. Uma seleção só pode seguir para um filho da etapa atual. IDs duplicados, fontes inexistentes e menus sem solução são rejeitados.
 
-O resultado final do modelo é uma decisão JSON, não um texto livre para o cliente. A aplicação aceita até dois IDs recuperados nessa execução e compõe a resposta com os artigos originais. Isso garante correspondência literal do texto com a base. Não garante que o modelo tenha escolhido o artigo mais relevante ou que a política fictícia seja adequada para uma empresa real.
+`public/app.js` monta o diálogo: mensagem do assistente, escolha do usuário, próxima pergunta e novas opções. Somente as opções atuais são clicáveis. Voltar reconstrói o caminho anterior. O menu inicial reinicia o caminho dentro do atendimento. Novo atendimento cria outra sessão ao fazer a primeira escolha.
 
-`prepare_handoff` não tem acesso a e-mail ou a um sistema de chamados. A aplicação prepara um rascunho em memória. Não existe confirmação de execução externa. Para pedidos explícitos de atendimento humano, o controlador também consulta a política de atendimento e inclui o canal e horário aprovados, mesmo que o modelo escolha encaminhar sem buscar primeiro.
+As soluções são conteúdo cadastrado. A interface mostra passos específicos para cada problema e a política que fundamenta a orientação. Isso não equivale a uma medição semântica automática de faithfulness. A coerência entre passos e política precisa de revisão editorial.
 
-## Por que não usar banco vetorial aqui?
+## Conclusão e encaminhamento
 
-A base tem 13 artigos curtos. Uma busca lexical com termos e sinônimos é pequena, auditável e suficiente para a referência inicial. Ela perde consultas implícitas, flexões e perguntas com pouca sobreposição lexical. O modelo pode reformular a busca, mas ainda depende desse mecanismo. Embeddings só devem entrar após medir essas falhas, comparando recall em um conjunto separado.
+A confirmação “Sim, resolveu” registra que o usuário considerou a orientação suficiente. Não prova que uma operação ocorreu em um sistema externo. O pedido humano prepara um resumo com o caminho escolhido. Ele não envia e-mail, abre chamados, cancela planos, altera dados ou executa reembolsos.
 
-## Modos de execução
+## Estado e privacidade
 
-| Modo | Decisão | Modelo externo | Texto final |
-|---|---|---|---|
-| `base` | Busca lexical e regras | Não | Artigos aprovados |
-| `auto`, configurado | Modelo escolhe ferramentas e fontes | Sim | Artigos aprovados |
-| `auto`, falha ou sem chave | Retorna `mode: base` e aviso | Tentativa ou indisponível | Artigos aprovados |
+Até 12 atendimentos ficam no armazenamento de sessão da aba, sob uma chave nova específica do fluxo guiado. Cada registro contém ID, título, caminho e situação (`active`, `resolved` ou `handoff`). Os registros são validados ao carregar. O histórico antigo de mensagens permanece armazenado sem ser sobrescrito, mas não é usado nesta interface.
 
-O modo base é uma automação de consulta. Não é apresentado como prova de autonomia de um LLM. O modo IA implementa um ciclo de ferramentas limitado, com geração extrativa ao final, em vez de resposta livre.
+Sem armazenamento disponível, o atendimento funciona em memória. As escolhas não são enviadas a um LLM. A interface carrega apenas arquivos de configuração e políticas. Não há campo de texto livre no atendimento. A busca da base de conhecimento é um recurso separado.
 
-## Dados sintéticos
+## Navegação
 
-`data/knowledge.json` reúne perfil da empresa, políticas, três organizações e três chamados de exemplo. As organizações não são usuários autenticados e seus registros são públicos. Os chamados são referências didáticas, sem histórico pessoal. O agente responde usando os artigos. Contas e chamados são exibidos para inspeção na interface, não consultados como dados privados de quem conversa.
+A barra principal abre e fecha com animação. A preferência é separada para desktop e celular. No celular, a navegação é um menu sobreposto com fechamento por Esc, toque fora ou escolha de seção. O painel de fontes é independente e começa fechado. As transições respeitam movimento reduzido.
 
-## Segurança e limites
+## API experimental de IA
 
-- A função valida formato, tamanho real do corpo e origem do navegador.
-- O limite Netlify é de 12 requisições por IP por minuto. Não é um teto global de gasto nem autenticação.
-- Segredos ficam no ambiente do servidor. Nenhuma chave vai para `dist/`.
-- A UI usa `textContent`, não interpreta HTML fornecido pelo usuário ou pelo modelo.
-- A CSP limita scripts, estilos e conexões à própria origem.
-- O frontend guarda até 12 conversas com 20 pares de pergunta/resposta por conversa no `sessionStorage` desta aba. O histórico pode ser reaberto após recarregar, não é sincronizado com uma conta e não é reenviado ao modelo. Se o armazenamento estiver indisponível, funciona em memória. A aplicação não escreve os textos nos próprios logs. Infraestrutura e provedor têm políticas próprias.
-- `store: false` desativa o armazenamento de resposta solicitado à API. Isso não equivale a uma promessa de retenção zero em toda a infraestrutura.
-- A detecção por expressão regular cobre apenas alguns ataques óbvios. Não é uma proteção universal contra prompt injection. O limite principal é estrutural: ferramentas permitidas, ausência de operações externas e texto final vindo da base.
+O endpoint `POST /api/chat` foi preservado como experimento separado. Ele recebe `question` e `mode` (`auto` ou `base`) e devolve texto, fontes, encaminhamento, rastro e versão da base. O atendimento por opções não chama esse endpoint.
 
-Antes de atender clientes reais: autenticação, autorização por conta, dados reais revisados, consentimento e política de privacidade, observabilidade com redação, cotas globais, análise de custos, revisão humana, testes adversariais maiores e armazenamento adequado. Não confundir uma demonstração publicada com um serviço de atendimento em produção para clientes reais.
+No modo IA, o controlador permite `search_knowledge` e `prepare_handoff`, limita a quatro chamadas de modelo, com até 450 tokens de saída por chamada e timeout individual de 12 segundos. IDs de fontes precisam ter sido recuperados na execução. O texto final da API é composto pelos artigos selecionados. Falhas do provedor geram fallback explícito para a referência sem modelo.
+
+A API valida formato e tamanho do corpo e a origem do navegador. O limite Netlify é de 12 requisições por IP por minuto, sem equivaler a um teto global de custo. Credenciais ficam no servidor. `store: false` desativa o armazenamento de resposta solicitado ao provedor, sem garantir retenção zero em toda a infraestrutura.
+
+## Avaliação
+
+Os seis testes do fluxo percorrem as 24 soluções e verificam caminhos, retorno e restauração, fontes válidas, IDs únicos, regras de reembolso e resumo humano. Os 12 testes anteriores cobrem controlador e contrato HTTP da API. O benchmark Python com 24 perguntas e o juiz semântico opcional continuam específicos à API experimental.
+
+A aplicação é uma demonstração sintética. Para atendimento real, revisar políticas, validar o fluxo com usuários, configurar canais humanos, proteger dados e conferir permissões e efeitos de cada integração.
