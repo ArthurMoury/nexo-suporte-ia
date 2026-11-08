@@ -1,7 +1,7 @@
 <p align="center">
   <img src="public/favicon.svg" alt="Nexo" width="62">
 </p>
-<h1 align="center">Nexo Suporte</h1>
+<h1 align="center">Nexo IA</h1>
 <p align="center">Um agente de suporte que consulta políticas, mostra suas fontes e reconhece seus limites.</p>
 <p align="center">
   <a href="https://nexo-suporte-arthurmoury.netlify.app">Experimentar a demonstração</a> ·
@@ -15,7 +15,7 @@
   <img alt="Dados sintéticos" src="https://img.shields.io/badge/dados-100%25%20fict%C3%ADcios-ad382d">
 </p>
 
-![Interface do agente Nexo](docs/screenshot.png)
+![Interface do Nexo IA](docs/interface-v2.png)
 
 ## O problema
 
@@ -26,10 +26,11 @@ O cenário é o **Nexo Workspace**, um software fictício de projetos e tarefas 
 ## O que você pode experimentar
 
 - Perguntar sobre planos, cobrança, senha, equipe, arquivos e integrações.
-- Inspecionar os artigos usados e os passos de ferramenta no painel de fontes em telas grandes. No celular, toque na citação para abrir o artigo.
+- Abrir a barra “Por trás da resposta” para inspecionar fontes e passos. Ela começa recolhida em todos os tamanhos de tela. Tocar em uma citação abre o painel e seu artigo.
 - Pedir atendimento humano e copiar o resumo preparado.
 - Comparar o agente com IA e a consulta determinística sem modelo.
-- Navegar e baixar a base fictícia completa.
+- Reabrir conversas pelo histórico desta aba e explorar exemplos identificados.
+- Navegar pela base, conhecer o contexto da loja fictícia de software e baixar os dados completos.
 
 Experimente estas perguntas:
 
@@ -79,7 +80,7 @@ Abra [localhost:4173](http://127.0.0.1:4173). Sem credencial de IA, o modo autom
 
 Para usar um modelo, defina `OPENAI_API_KEY` apenas no ambiente do servidor. O endpoint padrão é a Responses API. `OPENAI_BASE_URL` e `OPENAI_MODEL` permitem configurar o provedor compatível e o modelo. O padrão do projeto é `gpt-4.1-mini`. Não coloque chaves no frontend nem no Git. O arquivo `.env.example` documenta as variáveis. O comando `npm run dev` não carrega `.env` automaticamente. Em Node 22, você pode executar `node --env-file=.env scripts/dev.mjs` se optar por criar esse arquivo local ignorado.
 
-`DISABLE_AI=true` desliga o modelo e mantém a consulta por regras. Cada pergunta é independente. O histórico da interface fica somente na memória da aba.
+`DISABLE_AI=true` desliga o modelo e mantém a consulta por regras. Cada pergunta é independente. O histórico da interface fica no `sessionStorage` da aba, com até 12 conversas e 20 pares de pergunta/resposta por conversa. Recarregar preserva esse histórico. Ele não é sincronizado com uma conta nem enviado ao modelo. Sem armazenamento disponível, a interface mantém o histórico em memória.
 
 ## Verificar qualidade
 
@@ -146,7 +147,7 @@ docs/                       Arquitetura, avaliação e evidências
 
 ## Limites conhecidos
 
-A busca lexical pode perder perguntas implícitas ou sinônimos ausentes. O agente retorna até dois artigos e não mantém memória de conversa. A resposta extrativa pode ser mais longa do que o necessário. Os guardrails reduzem o alcance das falhas, mas a detecção simples de ataques não é uma defesa universal. A base e o benchmark são pequenos e sintéticos.
+A busca lexical pode perder perguntas implícitas ou sinônimos ausentes. O agente retorna até dois artigos. A interface permite reabrir conversas, mas o modelo não recebe esse histórico como contexto. A resposta extrativa pode ser mais longa do que o necessário. Os guardrails reduzem o alcance das falhas, mas a detecção simples de ataques não é uma defesa universal. A base e o benchmark são pequenos e sintéticos.
 
 Antes de atender pessoas reais, são necessários políticas revisadas, autenticação, autorização, cotas globais, observabilidade, privacidade e avaliação independente. Esta é uma demonstração pública funcional de portfólio, com fronteiras explícitas.
 

@@ -37,7 +37,7 @@ O modo base é uma automação de consulta. Não é apresentado como prova de au
 - Segredos ficam no ambiente do servidor. Nenhuma chave vai para `dist/`.
 - A UI usa `textContent`, não interpreta HTML fornecido pelo usuário ou pelo modelo.
 - A CSP limita scripts, estilos e conexões à própria origem.
-- A aplicação não persiste conversas e não escreve seus textos nos próprios logs. Infraestrutura e provedor têm políticas próprias.
+- O frontend guarda até 12 conversas com 20 pares de pergunta/resposta por conversa no `sessionStorage` desta aba. O histórico pode ser reaberto após recarregar, não é sincronizado com uma conta e não é reenviado ao modelo. Se o armazenamento estiver indisponível, funciona em memória. A aplicação não escreve os textos nos próprios logs. Infraestrutura e provedor têm políticas próprias.
 - `store: false` desativa o armazenamento de resposta solicitado à API. Isso não equivale a uma promessa de retenção zero em toda a infraestrutura.
 - A detecção por expressão regular cobre apenas alguns ataques óbvios. Não é uma proteção universal contra prompt injection. O limite principal é estrutural: ferramentas permitidas, ausência de operações externas e texto final vindo da base.
 
