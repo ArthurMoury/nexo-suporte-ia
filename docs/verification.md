@@ -32,3 +32,10 @@ Verificações realizadas nesta atualização:
 - Uma consulta real de IA na Netlify respondeu à pergunta sobre reembolso e ficou disponível no histórico da aba.
 
 Capturas da versão publicada: [tela inicial](interface-v2.png) e [sobre o projeto](project-v2.png). As capturas anteriores e os resultados de 07/11/2026 permanecem como registro da versão inicial.
+
+
+## Navegação lateral e imagem do GitHub, 08/11/2026
+
+A navegação principal ganhou controles para abrir e fechar, transição de 260 ms e preferência separada para computador e celular no armazenamento da sessão. No computador o conteúdo ocupa a área liberada. No celular o menu aparece sobre o conteúdo, com fundo atenuado, foco contido e fechamento por Esc, botão, toque fora e seleção de seção. Com movimento reduzido, as transições ficam desativadas. O painel de fontes mantém seu controle independente.
+
+A nova captura [interface-v3.png](interface-v3.png) mostra a versão publicada e substitui a imagem principal do README. O novo caminho também evita reutilizar o endereço da captura anterior nos caches de imagens. `npm run check` passou com 12 testes, 24 casos determinísticos e build. A abertura, o fechamento, a preferência após recarregar e o menu móvel foram conferidos no navegador.

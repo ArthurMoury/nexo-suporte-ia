@@ -9,8 +9,8 @@
 <body>
   <a class="skip" href="#main">Ir para o conteúdo</a>
   <div class="app">
-    <aside class="sidebar" aria-label="Navegação principal">
-      <a class="brand" href="/" aria-label="Nexo IA, início"><img src="/logo.svg" width="36" height="36" alt=""><span>Nexo <em>IA</em></span></a>
+    <aside id="main-sidebar" class="sidebar" aria-label="Navegação principal">
+      <div class="sidebar-brand"><a class="brand" href="/" aria-label="Nexo IA, início"><img src="/logo.svg" width="36" height="36" alt=""><span>Nexo <em>IA</em></span></a><button id="sidebar-close" class="sidebar-control" type="button" aria-label="Fechar menu lateral" title="Fechar menu lateral"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16m7-11-3 3 3 3"/></svg></button></div>
       <button id="reset" class="new-chat"><span aria-hidden="true">＋</span> Nova conversa</button>
       <nav aria-label="Seções">
         <button class="nav active" data-view="chat" aria-current="page" title="Conversar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 1 1 18 0Z"/></svg><span>Conversar</span></button>
@@ -21,8 +21,9 @@
       <details class="mobile-history"><summary>Histórico de conversas</summary><div id="mobile-history-list"></div></details>
       <div class="author"><span class="avatar">AM</span><div><strong>Arthur Moury</strong><a href="https://github.com/ArthurMoury/nexo-suporte-ia" target="_blank" rel="noreferrer">Ver projeto no GitHub ↗</a></div></div>
     </aside>
+    <div class="sidebar-backdrop" aria-hidden="true"></div>
     <div class="content">
-      <header class="topbar"><div class="topbar-titles"><strong>Central de Suporte</strong><span class="topbar-divider" aria-hidden="true"></span><span>Assistente Nexo</span></div><span class="topbar-status"><i aria-hidden="true"></i>Pronto para ajudar</span></header>
+      <header class="topbar"><div class="topbar-main"><button id="sidebar-toggle" class="sidebar-control" type="button" aria-label="Fechar menu lateral" title="Fechar menu lateral" aria-expanded="true" aria-controls="main-sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16m5-7 3 3-3 3"/></svg></button><div class="topbar-titles"><strong>Central de Suporte</strong><span class="topbar-divider" aria-hidden="true"></span><span>Assistente Nexo</span></div></div><span class="topbar-status"><i aria-hidden="true"></i>Pronto para ajudar</span></header>
       <main id="main" tabindex="-1">
         <section id="chat-view" class="view chat-layout" aria-label="Conversa com o agente">
           <div class="conversation">

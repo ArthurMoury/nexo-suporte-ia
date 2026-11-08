@@ -5,6 +5,70 @@ const nodes = (tag, className, text) => {
   if (text !== undefined) el.textContent = text;
   return el;
 };
+// The main navigation has its own state, independent of the sources panel.
+const app = $('.app');
+const sidebar = $('#main-sidebar');
+const sidebarToggle = $('#sidebar-toggle');
+const mobileSidebar = matchMedia('(max-width:650px)');
+let sidebarOpen = false;
+function preferredSidebarState() {
+  try {
+    const saved = sessionStorage.getItem(`nexo-ia-sidebar-${mobileSidebar.matches ? 'mobile' : 'desktop'}`);
+    if (saved !== null) return saved === 'open';
+  } catch { /* Use responsive defaults if session storage is unavailable. */ }
+  return !mobileSidebar.matches;
+}
+function setSidebarOpen(open, {remember = true, focus = false} = {}) {
+  const wasInside = sidebar.contains(document.activeElement);
+  // Restore focus before making a closing drawer inaccessible.
+  if (!open && wasInside) {
+    $('.content').inert = false;
+    sidebarToggle.focus({preventScroll:true});
+  }
+  sidebarOpen = open;
+  app.classList.toggle('sidebar-collapsed', !open);
+  app.classList.toggle('sidebar-open', open);
+  sidebar.inert = !open;
+  sidebar.setAttribute('aria-hidden', String(!open));
+  sidebarToggle.setAttribute('aria-expanded', String(open));
+  const label = open ? 'Fechar menu lateral' : 'Abrir menu lateral';
+  sidebarToggle.setAttribute('aria-label', label);
+  sidebarToggle.title = label;
+  $('.content').inert = mobileSidebar.matches && open;
+  document.body.classList.toggle('menu-modal-open', mobileSidebar.matches && open);
+  if (mobileSidebar.matches && open) {
+    sidebar.setAttribute('role', 'dialog'); sidebar.setAttribute('aria-modal', 'true');
+    if (focus) $('#sidebar-close').focus({preventScroll:true});
+  } else {
+    sidebar.removeAttribute('role'); sidebar.removeAttribute('aria-modal');
+    if (focus && !open) sidebarToggle.focus({preventScroll:true});
+  }
+  if (remember) {
+    try { sessionStorage.setItem(`nexo-ia-sidebar-${mobileSidebar.matches ? 'mobile' : 'desktop'}`, open ? 'open' : 'closed'); }
+    catch { /* The control remains available without persisted preferences. */ }
+  }
+}
+sidebarToggle.addEventListener('click', () => setSidebarOpen(!sidebarOpen, {focus:true}));
+$('#sidebar-close').addEventListener('click', () => setSidebarOpen(false, {focus:true}));
+$('.sidebar-backdrop').addEventListener('click', () => setSidebarOpen(false, {focus:true}));
+mobileSidebar.addEventListener('change', () => setSidebarOpen(preferredSidebarState(), {remember:false, focus:true}));
+document.addEventListener('keydown', event => {
+  if (!sidebarOpen) return;
+  if (event.key === 'Escape') { event.preventDefault(); setSidebarOpen(false, {focus:true}); }
+  if (event.key === 'Tab' && mobileSidebar.matches) {
+    const focusable = [...sidebar.querySelectorAll('a[href],button:not(:disabled),summary')]
+      .filter(el => el.getClientRects().length && !el.closest('details:not([open]) > :not(summary)'));
+    const first = focusable[0]; const last = focusable.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  }
+});
+setSidebarOpen(preferredSidebarState(), {remember:false, focus:true});
+requestAnimationFrame(() => app.classList.add('sidebar-ready'));
+app.addEventListener('transitionend', event => {
+  if (event.propertyName === 'grid-template-columns') adjustComposer();
+});
+
 const storageKey = 'nexo-ia-conversations-v1';
 let knowledge;
 let busy = false;
@@ -38,7 +102,9 @@ function switchView(name) {
     el.classList.toggle('active', active);
     if (active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
   });
+  if (mobileSidebar.matches && sidebarOpen) setSidebarOpen(false);
   $('#main').focus({preventScroll:true});
+  if (name === 'chat') adjustComposer();
 }
 function setSourcesOpen(open) {
   $('#chat-view').classList.toggle('sources-open', open);

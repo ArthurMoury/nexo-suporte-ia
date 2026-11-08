@@ -15,7 +15,7 @@
   <img alt="Dados sintéticos" src="https://img.shields.io/badge/dados-100%25%20fict%C3%ADcios-ad382d">
 </p>
 
-![Interface do Nexo IA](docs/interface-v2.png)
+![Interface do Nexo IA com navegação lateral recolhível](docs/interface-v3.png)
 
 ## O problema
 
@@ -29,6 +29,7 @@ O cenário é o **Nexo Workspace**, um software fictício de projetos e tarefas 
 - Abrir a barra “Por trás da resposta” para inspecionar fontes e passos. Ela começa recolhida em todos os tamanhos de tela. Tocar em uma citação abre o painel e seu artigo.
 - Pedir atendimento humano e copiar o resumo preparado.
 - Comparar o agente com IA e a consulta determinística sem modelo.
+- Abrir e fechar a navegação lateral com animação. No celular, o menu desliza sobre o conteúdo e fecha com Esc, toque fora ou escolha de uma seção.
 - Reabrir conversas pelo histórico desta aba e explorar exemplos identificados.
 - Navegar pela base, conhecer o contexto da loja fictícia de software e baixar os dados completos.
 
