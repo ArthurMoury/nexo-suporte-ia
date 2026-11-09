@@ -8,3 +8,4 @@ __pycache__/
 .venv/
 evaluation/results.local.json
 .DS_Store
+evaluation/results.quality.local.json

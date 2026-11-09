@@ -24,9 +24,13 @@ O texto final é gerado pelo modelo. A validade de um ID não comprova faithfuln
 
 ## Ferramentas
 
-`rag_search(query, top_k=4)` combina BM25 com reforço de termos sobre trechos de até 200 palavras, com sobreposição quando um parágrafo é maior. É recuperação lexical, sem embeddings ou banco vetorial.
+`rag_search(query, top_k=4)` combina BM25 com reforço de termos sobre trechos de até 200 palavras, com sobreposição quando um parágrafo é maior. Por padrão, a recuperação é lexical. Com `retrieval_mode=hybrid`, `embeddings.py` vetoriza textos pela API, `semantic_search.py` ordena por cosseno e combina os rankings por RRF. O cache em memória contém somente vetores públicos de documentos, invalidado pela revisão dos textos. Não há banco vetorial externo. O modo depende do suporte do provedor e pode consumir créditos adicionais.
 
 `read_document(document_id)` devolve a política completa somente para IDs conhecidos e já encontrados na execução. O ID não vira caminho de arquivo. O modelo não pode solicitar execução de código ou ferramentas arbitrárias.
+
+## Qualidade e guardrails
+
+`guardrails.py` concentra as validações de entrada, ferramentas e saída. `evaluation/quality.py` calcula relevance, faithfulness e groundedness a partir de julgamentos e evidências auditáveis. `evaluation/regression.py` repete cinco casos de recuperação e seis casos rotulados sem API. O juiz LLM em `evaluation/judge.py` é opcional, separado da conversa e sujeito à calibração humana. Consulte [o mapa dos conceitos e seus limites](concepts.md).
 
 ## Provedores e limites
 

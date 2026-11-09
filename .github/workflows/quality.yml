@@ -19,4 +19,6 @@ jobs:
         if: always()
         with:
           name: regression-report
-          path: evaluation/results.local.json
+          path: |
+            evaluation/results.local.json
+            evaluation/results.quality.local.json

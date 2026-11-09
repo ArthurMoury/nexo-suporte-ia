@@ -1,6 +1,6 @@
 # Avaliação do agente Python
 
-O comando `npm run check` executa 16 testes JavaScript, 10 testes Python, o benchmark histórico determinístico com 24 casos e o build.
+O comando `npm run check` executa 18 testes JavaScript, 25 testes Python, o benchmark histórico determinístico com 24 casos, cinco casos de recuperação, seis casos rotulados das métricas e o build.
 
 ## Testes do ciclo atual
 
@@ -28,6 +28,12 @@ Os relatórios históricos continuam em `docs/` com suas datas. O antigo fluxo d
 
 ## Juiz semântico opcional
 
-`evaluation/judge.py` é um adaptador de estudo para relevance e faithfulness. Usa credenciais do ambiente, pode consumir créditos e não roda no CI. Sua rubric precisa ser calibrada contra revisão humana antes de servir como critério de publicação. Uma citação existente, isoladamente, não comprova que todas as afirmações são sustentadas.
+`evaluation/judge.py` avalia relevance e classifica afirmações com evidências. `quality.py` valida os trechos e calcula faithfulness e groundedness. As definições e exemplos estão em [Conceitos](concepts.md). Usa credenciais do ambiente, pode consumir créditos e não roda no CI. Sua rubric precisa ser calibrada contra revisão humana antes de servir como critério de publicação. Uma citação existente, isoladamente, não comprova que todas as afirmações são sustentadas.
 
 Para evoluir a avaliação, separar um conjunto não usado no ajuste, incluir paráfrases, erros de recuperação, múltiplas intenções, premissas erradas, ataques e indisponibilidade do provedor. Medir acurácia factual, relevância, faithfulness, custo, duração e consultas desnecessárias sem confundir uma métrica com outra.
+
+## Regressão de recuperação, métricas e segurança
+
+`npm run evaluate:quality` executa os casos fixos de `quality-cases.json` e as consultas de recuperação de `regression.py`. O resultado fica em `evaluation/results.quality.local.json` e no artefato do CI. Os rótulos didáticos verificam o cálculo e as evidências; não representam notas de um modelo real.
+
+Os testes de embeddings simulam o transporte e exercitam cosseno, ordenação, RRF, cache, invalidação, falhas e o retorno ao LLM. O modo BM25 tem regressão garantindo que não contata a API de embeddings. Os guardrails têm casos de segredo em mensagem, papéis de histórico não permitidos, ferramentas não autorizadas e leitura por caminho. Os testes do juiz recusam trechos inventados e notas inválidas.

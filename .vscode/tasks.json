@@ -1,0 +1,8 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {"label": "Nexo: verificar tudo", "type": "shell", "command": "npm run check", "group": {"kind": "test", "isDefault": true}, "problemMatcher": []},
+    {"label": "Nexo: regressão de qualidade", "type": "shell", "command": "npm run evaluate:quality", "problemMatcher": []},
+    {"label": "Nexo: interface local", "type": "shell", "command": "npm run dev", "isBackground": true, "problemMatcher": []}
+  ]
+}

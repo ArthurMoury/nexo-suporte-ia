@@ -1,3 +1,18 @@
+# Conceitos, recuperação e botão lateral — 09/11/2026
+
+- Implementados módulos comentados de embeddings por API, busca semântica com cosseno, busca híbrida com RRF, guardrails e avaliação de relevance, faithfulness e groundedness.
+- `npm run check`: 18 testes JavaScript, 25 testes Python, 24 casos do benchmark histórico, cinco casos de recuperação e seis casos de métricas rotuladas aprovados; build aprovado.
+- Os protocolos OpenAI/Gemini de embeddings e o juiz foram testados com transporte simulado. As funções Python, os cálculos e as validações são reais; os casos não representam uma avaliação independente da qualidade de um modelo comercial.
+- Uma consulta real na publicação confirmou GPT-4.1 mini → ferramenta Python BM25 → modelo → resposta com sete dias e a exceção de renovação. O gateway atual recusou o modelo de embeddings. Por isso, o perfil mantém a conexão de servidor em BM25 e oferece o modo híbrido com chave própria OpenAI/Gemini. Nenhuma chave pessoal foi fornecida para uma validação real desse modo.
+- A publicação rejeitou pedidos de modo híbrido ao servidor e uma chave reconhecível no chat antes de contatar o LLM. [Registro da validação](quality-release-live.json).
+- Botão superior corrigido: chevron aponta para a ação, com rótulo e `aria-expanded` coerentes. Abertura e fechamento testados localmente e na publicação.
+- Perfil e seletor de recuperação conferidos em desktop e 390 × 844; controles acessíveis e base sem transbordamento horizontal (390 px de conteúdo para viewport de 390 px).
+- Guia de estudo em [concepts.md](concepts.md), com mapa dos módulos e tarefas de verificação para VS Code.
+
+Capturas atuais: [interface](interface-v4.png), [conexão com modo de busca](api-connection-v2.png) e [conceitos na base](concepts-ui.png). Os registros abaixo são históricos.
+
+---
+
 # Versão atual: agente LLM com ferramentas Python — 08/11/2026
 
 A interface voltou ao texto livre. A árvore de cinco assuntos, seus caminhos, o botão de atendente e o texto “Pronto para ajudar” foram removidos. O perfil Arthur Moury oferece conexão de API e a base explica o ciclo completo de ida e volta.

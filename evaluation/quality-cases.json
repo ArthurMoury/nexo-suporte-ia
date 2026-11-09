@@ -1,0 +1,192 @@
+{
+  "labeling": "Exemplos rotulados pelo autor para regressão do cálculo; não avaliação humana independente de modelos.",
+  "cases": [
+    {
+      "id": "prazo-correto",
+      "question": "Qual o prazo da primeira contratação paga?",
+      "answer": "A primeira contratação paga permite solicitar reembolso em até 7 dias corridos.",
+      "context_ids": [
+        "reembolso"
+      ],
+      "citation_ids": [
+        "reembolso"
+      ],
+      "judgment": {
+        "relevance": {
+          "score": 1,
+          "reason": "Rótulo didático fixo; não é resultado de juiz em produção."
+        },
+        "claims": [
+          {
+            "text": "A primeira contratação paga permite solicitar reembolso em até 7 dias corridos.",
+            "verdict": "entailed",
+            "reason": "Rótulo didático fixo para regressão do avaliador.",
+            "evidence": [
+              {
+                "document_id": "reembolso",
+                "quote": "a primeira contratação paga pode ter reembolso integral solicitado em até 7 dias corridos da contratação."
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "relevance": 1,
+        "faithfulness": 1,
+        "groundedness": 1
+      }
+    },
+    {
+      "id": "prazo-inventado-com-citacao",
+      "question": "Qual o prazo de reembolso?",
+      "answer": "O prazo é de 70 dias.",
+      "context_ids": [
+        "reembolso"
+      ],
+      "citation_ids": [
+        "reembolso"
+      ],
+      "judgment": {
+        "relevance": {
+          "score": 1,
+          "reason": "Rótulo didático fixo; não é resultado de juiz em produção."
+        },
+        "claims": [
+          {
+            "text": "O prazo é de 70 dias.",
+            "verdict": "contradicted",
+            "reason": "Rótulo didático fixo para regressão do avaliador.",
+            "evidence": [
+              {
+                "document_id": "reembolso",
+                "quote": "a primeira contratação paga pode ter reembolso integral solicitado em até 7 dias corridos da contratação."
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "relevance": 1,
+        "faithfulness": 0,
+        "groundedness": 0
+      }
+    },
+    {
+      "id": "fiel-mas-irrelevante",
+      "question": "Qual o prazo de reembolso?",
+      "answer": "O plano Pro custa R$ 39 por pessoa por mês.",
+      "context_ids": [
+        "planos"
+      ],
+      "citation_ids": [
+        "planos"
+      ],
+      "judgment": {
+        "relevance": {
+          "score": 0,
+          "reason": "Rótulo didático fixo; não é resultado de juiz em produção."
+        },
+        "claims": [
+          {
+            "text": "O plano Pro custa R$ 39 por pessoa por mês.",
+            "verdict": "entailed",
+            "reason": "Rótulo didático fixo para regressão do avaliador.",
+            "evidence": [
+              {
+                "document_id": "planos",
+                "quote": "O Nexo Pro custa R$ 39 por pessoa por mês, com projetos ilimitados e 20 GB por pessoa."
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "relevance": 0,
+        "faithfulness": 1,
+        "groundedness": 1
+      }
+    },
+    {
+      "id": "contexto-sustenta-mas-fonte-nao-citada",
+      "question": "Qual o prazo?",
+      "answer": "O prazo da primeira contratação paga é de 7 dias corridos.",
+      "context_ids": [
+        "reembolso"
+      ],
+      "citation_ids": [],
+      "judgment": {
+        "relevance": {
+          "score": 1,
+          "reason": "Rótulo didático fixo; não é resultado de juiz em produção."
+        },
+        "claims": [
+          {
+            "text": "O prazo da primeira contratação paga é de 7 dias corridos.",
+            "verdict": "entailed",
+            "reason": "Rótulo didático fixo para regressão do avaliador.",
+            "evidence": [
+              {
+                "document_id": "reembolso",
+                "quote": "a primeira contratação paga pode ter reembolso integral solicitado em até 7 dias corridos da contratação."
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "relevance": 1,
+        "faithfulness": 1,
+        "groundedness": 0
+      }
+    },
+    {
+      "id": "fato-ausente",
+      "question": "Quantos clientes existem?",
+      "answer": "A Nexo tem 50 mil clientes.",
+      "context_ids": [
+        "planos"
+      ],
+      "citation_ids": [],
+      "judgment": {
+        "relevance": {
+          "score": 1,
+          "reason": "Rótulo didático fixo; não é resultado de juiz em produção."
+        },
+        "claims": [
+          {
+            "text": "A Nexo tem 50 mil clientes.",
+            "verdict": "unsupported",
+            "reason": "Rótulo didático fixo para regressão do avaliador.",
+            "evidence": []
+          }
+        ]
+      },
+      "expected": {
+        "relevance": 1,
+        "faithfulness": 0,
+        "groundedness": 0
+      }
+    },
+    {
+      "id": "abstencao-sem-afirmacao",
+      "question": "Qual o endereço da sede?",
+      "answer": "Não tenho essa informação na base. Pode esclarecer qual unidade procura?",
+      "context_ids": [
+        "planos"
+      ],
+      "citation_ids": [],
+      "judgment": {
+        "relevance": {
+          "score": 1,
+          "reason": "Rótulo didático fixo; não é resultado de juiz em produção."
+        },
+        "claims": []
+      },
+      "expected": {
+        "relevance": 1,
+        "faithfulness": null,
+        "groundedness": null
+      }
+    }
+  ]
+}

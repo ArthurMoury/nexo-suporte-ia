@@ -4,7 +4,7 @@
 <p align="center"><a href="https://nexo-suporte-arthurmoury.netlify.app">Conversar com o agente</a> · <a href="docs/architecture.md">Arquitetura</a> · <a href="docs/evaluation.md">Avaliação</a></p>
 <p align="center"><img alt="Quality" src="https://github.com/ArthurMoury/nexo-suporte-ia/actions/workflows/quality.yml/badge.svg"> <img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-426b8a"> <img alt="Node 22 ou superior" src="https://img.shields.io/badge/Node-22%2B-36664a"></p>
 
-![Chat com LLM e ferramentas Python](docs/llm-agent.png)
+![Nexo IA com navegação corrigida](docs/interface-v4.png)
 
 ## Um agente que consulta antes de responder
 
@@ -49,7 +49,7 @@ O backend Python roda nativamente na Vercel. A interface e a camada de transport
 
 Também há opção para uma chave própria da OpenAI e para a conexão configurada no servidor. A conexão do servidor usa o provedor e modelo informados em `/api/config`, sem expor sua chave ao navegador.
 
-[Ver a tela de conexão](docs/api-connection.png).
+[Ver a tela de conexão](docs/api-connection-v2.png).
 
 Chaves pessoais ficam somente na memória da página. Não são gravadas no histórico, no armazenamento da sessão, nos arquivos do projeto ou nos logs próprios da aplicação. Ao recarregar, é preciso reconectar a chave pessoal. Na produção, a chave atravessa o transporte Netlify e o backend Python por HTTPS para chamar o provedor. A conexão do servidor mantém sua chave fora do navegador.
 
@@ -59,16 +59,20 @@ O uso dos modelos, inclusive o teste de conexão, pode consumir créditos do pro
 
 | Componente | Implementação |
 |---|---|
-| `rag_search(query, top_k)` | Python: recupera trechos com BM25 e reforço de termos |
+| `rag_search(query, top_k)` | Python: BM25 por padrão; busca híbrida com embeddings opcional |
 | `read_document(document_id)` | Python: lê uma política conhecida pelo ID |
 | Documentos | 13 arquivos Markdown em `python_api/documents/` |
 | Orquestração | Até 4 rodadas de modelo e 6 chamadas de ferramenta |
 | Resposta | Texto gerado pelo LLM, com fontes validadas contra a execução |
 | Contexto | Até 4 pares recentes de mensagens |
 
-A recuperação é **lexical**, sem embeddings ou banco vetorial. A geração apoiada nos trechos recuperados forma o RAG. IDs citados precisam ter aparecido nos resultados das ferramentas. Isso comprova a origem da referência, mas não garante por si só que toda afirmação do modelo esteja correta. Preços, prazos e condições precisam ser avaliados.
+A recuperação padrão é **lexical (BM25)**. O perfil também permite ativar **busca híbrida**, com embeddings por API, similaridade de cosseno e fusão RRF. Os vetores dos documentos ficam em cache na memória do backend; não há banco vetorial externo. O modo híbrido pode consumir créditos adicionais e depende do suporte do provedor ao modelo de embeddings. Na publicação atual, ative-o com uma chave própria OpenAI/Gemini; o gateway do servidor permanece em BM25 após recusar o modelo de embeddings na validação. A geração apoiada nos trechos recuperados forma o RAG. IDs citados precisam ter aparecido nos resultados das ferramentas. Isso comprova a origem da referência, mas não garante por si só que toda afirmação do modelo esteja correta. Preços, prazos e condições precisam ser avaliados.
 
 O painel **Por trás da resposta** começa fechado e mostra as chamadas efetivas, os argumentos, a execução em Python e os documentos recuperados. A página **Base de conhecimento** explica o mesmo fluxo, incluindo o retorno do resultado ao LLM.
+
+## Conceitos no código
+
+O projeto inclui **relevance, faithfulness, groundedness, guardrails, embeddings, busca semântica e testes de regressão**, com comentários em português nos módulos. Veja o [guia de estudo com mapa dos arquivos](docs/concepts.md). A Base de conhecimento explica os conceitos e o perfil permite escolher o modo de recuperação. O juiz de qualidade é opcional e não roda automaticamente no chat.
 
 ## Executar localmente
 
@@ -104,7 +108,7 @@ Os nomes de modelo são configuráveis. A disponibilidade depende da chave e da 
 npm run check
 ```
 
-A verificação executa **16 testes JavaScript**, **10 testes Python**, o **benchmark determinístico de referência com 24 casos** e o build. Os testes do backend verificam execução real das funções Python com o transporte LLM simulado, retorno do contexto ao modelo, histórico, validação de fontes, ferramentas não permitidas, limites e o protocolo Gemini.
+A verificação executa **18 testes JavaScript**, **25 testes Python**, o **benchmark determinístico de referência com 24 casos**, cinco casos de recuperação, seis casos de métricas rotuladas e o build. Os testes do backend verificam execução real das funções Python com o transporte LLM simulado, retorno do contexto ao modelo, histórico, validação de fontes, ferramentas não permitidas, limites e o protocolo Gemini.
 
 Para testar a integração publicada com chamadas reais:
 
@@ -138,7 +142,7 @@ npx netlify-cli deploy --prod --build
 ## Estrutura
 
 ```text
-python_api/nexo_agent/       Orquestração, provedores e RAG em Python
+python_api/nexo_agent/       Orquestração, provedores, RAG, embeddings e guardrails
 python_api/documents/        Documentos Markdown e termos de busca
 python_api/api/agent.py      Handler HTTP do backend Python
 python_api/tests/            Testes do ciclo e das ferramentas
@@ -146,7 +150,8 @@ src/python-proxy.mjs        Transporte e configuração do provedor
 netlify/functions/chat.mjs  Rotas /api/chat, /api/config e /api/connection
 public/                     Chat, perfil, histórico e base de conhecimento
 src/engine.mjs              Referência histórica de regras para avaliação
-evaluation/                 Benchmark de referência, smoke e juiz opcional
+evaluation/                 Métricas, regressão, benchmark, smoke e juiz opcional
+docs/concepts.md            Guia de estudo dos conceitos e módulos comentados
 ```
 
 Referências: [Function calling do Gemini](https://ai.google.dev/gemini-api/docs/function-calling), [Function calling da OpenAI](https://developers.openai.com/api/docs/guides/function-calling), [Python na Vercel](https://vercel.com/docs/functions/runtimes/python/api-directory) e [Netlify Functions](https://docs.netlify.com/build/functions/overview/).

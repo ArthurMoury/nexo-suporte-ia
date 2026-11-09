@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-09",
+  "config": {
+    "serverConfigured": true,
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "runtime": "python",
+    "serverEmbeddingsConfigured": false
+  },
+  "checks": [
+    {
+      "case": "server-hybrid-blocked",
+      "http_status": 400,
+      "error": "A conexão do servidor não oferece embeddings. Conecte uma chave própria da OpenAI ou Gemini para usar busca híbrida.",
+      "passed": true
+    },
+    {
+      "case": "secret-before-provider",
+      "http_status": 400,
+      "error": "Remova a chave de API da mensagem. Use a conexão no perfil.",
+      "passed": true
+    }
+  ],
+  "real_chat_verified": {
+    "mode": "lexical-bm25",
+    "runtime": "python",
+    "model": "gpt-4.1-mini",
+    "question": "Qual o prazo da primeira contratação paga para pedir reembolso?",
+    "essential_fact": "até 7 dias corridos; renovações exigem análise humana",
+    "passed": true
+  },
+  "hybrid_gateway_probe": {
+    "http_status": 502,
+    "error": "Modelo não encontrado. Confira o nome nas configurações.",
+    "outcome": "Server kept on BM25; own-key embedding adapters tested with simulated transport only"
+  }
+}
